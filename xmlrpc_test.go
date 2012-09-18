@@ -6,17 +6,17 @@ import (
 )
 
 // To make this test passed, xmlrpc server should be run.
-func Test_Call(t *testing.T) {
-    client := NewClient("http://localhost:5001")
-    result, err := client.Call("bugzilla.time")
-
-    if err != nil {
-        t.Error(err)
-    }
-
-    assert_not_nil(t, result)
-    assert_nil(t, err)
-}
+//func Test_Call(t *testing.T) {
+//    client := NewClient("http://localhost:5001")
+//    result, err := client.Call("bugzilla.time")
+//
+//    if err != nil {
+//        t.Error(err)
+//    }
+//
+//    assert_not_nil(t, result)
+//    assert_nil(t, err)
+//}
 
 const RESPONSE_BODY = `
 <?xml version="1.0" ?>
@@ -69,16 +69,16 @@ func Test_parseResponseBody_FaultResponse(t *testing.T) {
     assert_not_nil(t, err)
 }
 
-func Test_Call_WithParams(t *testing.T) {
-    client := NewClient("http://localhost:5001")
-    result, err := client.Call("bugzilla.login", Struct{"username": "joesmith", "password": "secret"})
-
-    var id int64
-    id = 120
-
-    assert_nil(t, err)
-    assert_equal(t, id, result.(Struct)["id"])
-}
+//func Test_Call_WithParams(t *testing.T) {
+//    client := NewClient("http://localhost:5001")
+//    result, err := client.Call("bugzilla.login", Struct{"username": "joesmith", "password": "secret"})
+//
+//    var id int64
+//    id = 120
+//
+//    assert_nil(t, err)
+//    assert_equal(t, id, result.(Struct)["id"])
+//}
 
 func assert_not_nil(t *testing.T, object interface{}) {
     if object == nil {

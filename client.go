@@ -9,6 +9,7 @@ import (
     "net/http"
     "net/rpc"
     "strings"
+    "reflect"
 )
 
 type clientCodec struct {
@@ -61,11 +62,20 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) error {
 }
 
 func (codec *clientCodec) ReadResponseBody(body interface{}) (err error) {
-    body, err = parseResponse(codec.responseBody)
+    var result interface{}
+    result, err = parseResponse(codec.responseBody)
 
     if err != nil {
         return err
     }
+
+    v := reflect.ValueOf(body)
+
+    if v.Kind() == reflect.Ptr {
+        v = v.Elem()
+    }
+
+    v.Set(reflect.ValueOf(result))
 
     return nil
 }
