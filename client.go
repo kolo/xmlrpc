@@ -18,6 +18,9 @@ type clientCodec struct {
     conn   io.Closer
 
     responseBody []byte
+
+    ready chan uint64
+    requests map[uint64]*http.Request
 }
 
 func (codec *clientCodec) WriteRequest(request *rpc.Request, body interface{}) (err error) {
@@ -40,11 +43,20 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, body interface{}) (
         return err
     }
 
-    return codec.writer.Flush()
+    if err = codec.writer.Flush(); err != nil {
+        return err
+    }
+
+    codec.requests[request.Seq] = httpRequest
+    codec.ready <- request.Seq
+
+    return nil
 }
 
 func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) error {
-    httpResponse, err := http.ReadResponse(codec.reader, &http.Request{ Method: "POST" })
+    seq := <-codec.ready
+
+    httpResponse, err := http.ReadResponse(codec.reader, codec.requests[seq])
 
     if err != nil {
         return err
@@ -57,6 +69,9 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) error {
     }
 
     httpResponse.Body.Close()
+
+    response.Seq = seq
+    delete(codec.requests, seq)
 
     return nil
 }
@@ -94,6 +109,12 @@ func NewClient(url string) (*rpc.Client, error) {
     reader := bufio.NewReader(conn)
     writer := bufio.NewWriter(conn)
 
-    codec := clientCodec{ reader: reader, writer: writer, conn: conn }
+    codec := clientCodec{
+        reader: reader,
+        writer: writer,
+        conn: conn,
+        ready: make(chan uint64),
+        requests: make(map[uint64]*http.Request),
+    }
     return rpc.NewClientWithCodec(&codec), nil
 }
