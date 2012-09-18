@@ -4,10 +4,12 @@ require "xmlrpc/server"
 
 class Bugzilla
   def time
+    puts "#time"
     Time.now
   end
 
   def login(opts)
+    puts "#login"
     {id: 120}
   end
 end

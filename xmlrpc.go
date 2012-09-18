@@ -2,47 +2,47 @@ package xmlrpc
 
 import (
     "fmt"
-    "io/ioutil"
+    //"io/ioutil"
     "net/http"
     "regexp"
     "strings"
     "time"
 )
 
-type Client struct {
-    url string
-    httpClient *http.Client
-}
+//type Client struct {
+//    url string
+//    httpClient *http.Client
+//}
 
-func NewClient(url string) (client *Client) {
-    client = &Client{ url: url, httpClient: &http.Client{} }
-    return
-}
+//func NewClient(url string) (client *Client) {
+//    client = &Client{ url: url, httpClient: &http.Client{} }
+//    return
+//}
 
 // Call make request to XMLRPC server, parses its result and return as instance of Result interface.
-func (client *Client) Call(method string, params ...interface{}) (result interface{}, err error) {
-    var request *http.Request
-    var response *http.Response
-
-    request, err = buildRequest(client.url, method, params)
-
-    if err != nil {
-        return result, err
-    }
-
-    response, err = client.httpClient.Do(request)
-
-    if response != nil && err == nil {
-
-        var data []byte
-        data, err = ioutil.ReadAll(response.Body)
-        response.Body.Close()
-
-        result, err = parseResponse(data)
-    }
-
-    return
-}
+//func (client *Client) Call(method string, params ...interface{}) (result interface{}, err error) {
+//    var request *http.Request
+//    var response *http.Response
+//
+//    request, err = buildRequest(client.url, method, params)
+//
+//    if err != nil {
+//        return result, err
+//    }
+//
+//    response, err = client.httpClient.Do(request)
+//
+//    if response != nil && err == nil {
+//
+//        var data []byte
+//        data, err = ioutil.ReadAll(response.Body)
+//        response.Body.Close()
+//
+//        result, err = parseResponse(data)
+//    }
+//
+//    return
+//}
 
 func buildRequest(url, method string, params []interface{}) (request *http.Request, err error) {
     requestBody := buildRequestBody(method, params)
