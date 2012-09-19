@@ -44,6 +44,8 @@ func getValue(parser *xml.Decoder) (result interface{}, err error) {
                 return getStringValue(parser)
             case "struct":
                 result, err = getStructValue(parser)
+            case "array":
+                result, err = getArrayValue(parser)
             default:
                 // Move on
             }
@@ -169,6 +171,33 @@ func getElementValue(parser *xml.Decoder) (value string, err error) {
         case xml.EndElement:
             processing = false
         }
+        token, err = parser.Token()
+    }
+
+    return
+}
+
+func getArrayValue(parser *xml.Decoder) (result interface{}, err error) {
+    var token xml.Token
+    token, err = parser.Token()
+
+    result = []interface{}{}
+
+    for {
+        switch t := token.(type) {
+        case xml.StartElement:
+            if t.Name.Local == "value" {
+                var value interface{}
+                value, err = getValue(parser)
+
+                result = append(result.([]interface{}), value)
+            }
+        case xml.EndElement:
+            if t.Name.Local == "array" {
+                return result, err
+            }
+        }
+
         token, err = parser.Token()
     }
 

@@ -3,6 +3,7 @@ package xmlrpc
 import (
     "fmt"
     "net/http"
+    "reflect"
     "strings"
     "time"
 )
@@ -59,7 +60,13 @@ func buildValueElement(value interface{}) (buffer string) {
     case time.Time:
         buffer += buildTimeElement(v)
     default:
-        fmt.Errorf("Unsupported value type")
+        rv := reflect.ValueOf(value)
+
+        if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
+            buffer += buildArrayElement(v)
+        } else {
+            fmt.Errorf("Unsupported value type")
+        }
     }
 
     buffer += `</value>`
@@ -92,6 +99,23 @@ func buildBooleanElement(value bool) (buffer string) {
 }
 
 func buildTimeElement(t time.Time) string {
-    return fmt.Sprintf("<dateTime.iso8601>%d%d%dT%d:%d:%d</dateTime.iso8601>", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+    return fmt.Sprintf(
+        "<dateTime.iso8601>%d%d%dT%d:%d:%d</dateTime.iso8601>",
+        t.Year(), t.Month(),t.Day(),
+        t.Hour(), t.Minute(), t.Second(),
+    )
 }
 
+func buildArrayElement(array interface{}) string {
+    buffer := `<array><data>`
+
+    for _, value := range array.([]interface{}) {
+        buffer += `<value>`
+        buffer += buildValueElement(value)
+        buffer += `</value>`
+    }
+
+    buffer += `</data></array>`
+
+    return buffer
+}

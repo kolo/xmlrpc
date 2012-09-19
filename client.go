@@ -53,7 +53,10 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, params interface{})
         return err
     }
 
-    codec.cookies = httpResponse.Cookies()
+    if codec.cookies == nil {
+        codec.cookies = httpResponse.Cookies()
+    }
+
     codec.responses[request.Seq] = httpResponse
     codec.ready <- request.Seq
 
