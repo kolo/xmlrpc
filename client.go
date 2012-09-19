@@ -1,13 +1,10 @@
 package xmlrpc
 
 import (
-    "crypto/tls"
-    "fmt"
     "io/ioutil"
     "net/http"
     "net/rpc"
     "reflect"
-    "strings"
 )
 
 // clientCodec is rpc.ClientCodec interface implementation.
@@ -29,19 +26,12 @@ type clientCodec struct {
     ready chan uint64
 }
 
-func (codec *clientCodec) WriteRequest(request *rpc.Request, body interface{}) (err error) {
-    if body == nil {
-        body = []interface{}{}
-    }
-    requestBody := buildRequestBody(request.ServiceMethod, body.([]interface{}))
-    httpRequest, err := http.NewRequest("POST", codec.url, strings.NewReader(requestBody))
+func (codec *clientCodec) WriteRequest(request *rpc.Request, params interface{}) (err error) {
+    httpRequest, err := newRequest(codec.url, request.ServiceMethod, params)
 
     if err != nil {
         return err
     }
-
-    httpRequest.Header.Set("Content-Type", "text/xml")
-    httpRequest.Header.Set("Content-Lenght", fmt.Sprintf("%d", len(requestBody)))
 
     var httpResponse *http.Response
     httpResponse, err = codec.httpClient.Do(httpRequest)
@@ -99,8 +89,12 @@ func (codec *clientCodec) Close() error {
     return nil
 }
 
-func NewClient(url string) (*rpc.Client, error) {
-    transport := &http.Transport{ TLSClientConfig: &tls.Config{ InsecureSkipVerify: true } }
+// NewClient returns instance of rpc.Client object, that is used to send request to xmlrpc service.
+func NewClient(url string, transport *http.Transport) (*rpc.Client, error) {
+    if transport == nil {
+        transport = &http.Transport{}
+    }
+
     httpClient := &http.Client{ Transport: transport }
 
     codec := clientCodec{
@@ -109,5 +103,6 @@ func NewClient(url string) (*rpc.Client, error) {
         ready: make(chan uint64),
         responses: make(map[uint64]*http.Response),
     }
+
     return rpc.NewClientWithCodec(&codec), nil
 }

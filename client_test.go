@@ -5,8 +5,8 @@ import (
     "time"
 )
 
-func Test_Client_Call(t *testing.T) {
-    client, err := NewClient("http://localhost:5001")
+func Test_Client_CallWithoutParams(t *testing.T) {
+    client, err := NewClient("http://localhost:5001", nil)
 
     assert_nil(t, err)
 
@@ -18,4 +18,20 @@ func Test_Client_Call(t *testing.T) {
     }
 
     assert_not_nil(t, result)
+}
+
+func Test_Client_CallWithParams(t *testing.T) {
+    client, err := NewClient("http://localhost:5001", nil)
+
+    assert_nil(t, err)
+
+    defer client.Close()
+
+    var result = Struct{}
+    if err = client.Call("bugzilla.login", Struct{"username": "joe", "password": "secret" }, &result); err != nil {
+        t.Fatal(err)
+    }
+
+    var id int64 = 120
+    assert_equal(t, id, result["id"])
 }

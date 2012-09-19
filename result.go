@@ -4,32 +4,16 @@ import (
     "bytes"
     "encoding/xml"
     "fmt"
-    "regexp"
     "strings"
     "strconv"
     "time"
 )
-
-const TIME_LAYOUT = "20060102T15:04:05"
-
-type Struct map[string]interface{}
-
-func parseSuccessfulResponse(response []byte) (interface{}, error) {
-    valueXml := getValueXml(response)
-    return parseValue(valueXml)
-}
 
 func parseValue(valueXml []byte) (result interface{}, err error) {
     parser := xml.NewDecoder(bytes.NewReader(valueXml))
     result, err = getValue(parser)
 
     return
-}
-
-func getValueXml(rawXml []byte) ([]byte) {
-    expr, _ := regexp.Compile(`<value>(\s|\S)+</value>`)
-    return expr.Find(rawXml)
-
 }
 
 func getValue(parser *xml.Decoder) (result interface{}, err error) {
