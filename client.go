@@ -1,26 +1,32 @@
 package xmlrpc
 
 import (
-    "bufio"
+    "crypto/tls"
     "fmt"
-    "io"
     "io/ioutil"
-    "net"
     "net/http"
     "net/rpc"
-    "strings"
     "reflect"
+    "strings"
 )
 
+// clientCodec is rpc.ClientCodec interface implementation.
 type clientCodec struct {
-    reader *bufio.Reader
-    writer *bufio.Writer
-    conn   io.Closer
+    // url presents url of xmlrpc service
+    url string
 
+    // httpClient works with HTTP protocol
+    httpClient *http.Client
+
+    // responses presents map of active requests. It is required to return request id, that
+    // rpc.Client can mark them as done.
+    responses map[uint64]*http.Response
+
+    // responseBody holds response body of last request.
     responseBody []byte
 
+    // ready presents channel, that is used to link request and it`s response.
     ready chan uint64
-    requests map[uint64]*http.Request
 }
 
 func (codec *clientCodec) WriteRequest(request *rpc.Request, body interface{}) (err error) {
@@ -28,7 +34,7 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, body interface{}) (
         body = []interface{}{}
     }
     requestBody := buildRequestBody(request.ServiceMethod, body.([]interface{}))
-    httpRequest, err := http.NewRequest("POST", "/", strings.NewReader(requestBody))
+    httpRequest, err := http.NewRequest("POST", codec.url, strings.NewReader(requestBody))
 
     if err != nil {
         return err
@@ -37,30 +43,22 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, body interface{}) (
     httpRequest.Header.Set("Content-Type", "text/xml")
     httpRequest.Header.Set("Content-Lenght", fmt.Sprintf("%d", len(requestBody)))
 
-    err = httpRequest.Write(codec.writer)
+    var httpResponse *http.Response
+    httpResponse, err = codec.httpClient.Do(httpRequest)
 
     if err != nil {
         return err
     }
 
-    if err = codec.writer.Flush(); err != nil {
-        return err
-    }
-
-    codec.requests[request.Seq] = httpRequest
+    codec.responses[request.Seq] = httpResponse
     codec.ready <- request.Seq
 
     return nil
 }
 
-func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) error {
+func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error) {
     seq := <-codec.ready
-
-    httpResponse, err := http.ReadResponse(codec.reader, codec.requests[seq])
-
-    if err != nil {
-        return err
-    }
+    httpResponse := codec.responses[seq]
 
     codec.responseBody, err = ioutil.ReadAll(httpResponse.Body)
 
@@ -71,7 +69,7 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) error {
     httpResponse.Body.Close()
 
     response.Seq = seq
-    delete(codec.requests, seq)
+    delete(codec.responses, seq)
 
     return nil
 }
@@ -96,25 +94,20 @@ func (codec *clientCodec) ReadResponseBody(body interface{}) (err error) {
 }
 
 func (codec *clientCodec) Close() error {
-    return codec.conn.Close()
+    transport := codec.httpClient.Transport.(*http.Transport)
+    transport.CloseIdleConnections()
+    return nil
 }
 
 func NewClient(url string) (*rpc.Client, error) {
-    conn, err := net.Dial("tcp", url)
-
-    if err != nil {
-        return nil, err
-    }
-
-    reader := bufio.NewReader(conn)
-    writer := bufio.NewWriter(conn)
+    transport := &http.Transport{ TLSClientConfig: &tls.Config{ InsecureSkipVerify: true } }
+    httpClient := &http.Client{ Transport: transport }
 
     codec := clientCodec{
-        reader: reader,
-        writer: writer,
-        conn: conn,
+        url: url,
+        httpClient: httpClient,
         ready: make(chan uint64),
-        requests: make(map[uint64]*http.Request),
+        responses: make(map[uint64]*http.Response),
     }
     return rpc.NewClientWithCodec(&codec), nil
 }

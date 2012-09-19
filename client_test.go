@@ -6,15 +6,16 @@ import (
 )
 
 func Test_Client_Call(t *testing.T) {
-    client, err := NewClient("localhost:5001")
+    client, err := NewClient("http://localhost:5001")
 
     assert_nil(t, err)
 
     defer client.Close()
 
     var result = new(time.Time)
-    err = client.Call("bugzilla.time", nil, result)
+    if err = client.Call("bugzilla.time", nil, result); err != nil {
+        t.Fatal(err)
+    }
 
-    assert_nil(t, err)
     assert_not_nil(t, result)
 }
