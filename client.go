@@ -15,6 +15,9 @@ type clientCodec struct {
     // httpClient works with HTTP protocol
     httpClient *http.Client
 
+    // cookies stores cookies received on last request
+    cookies []*http.Cookie
+
     // responses presents map of active requests. It is required to return request id, that
     // rpc.Client can mark them as done.
     responses map[uint64]*http.Response
@@ -29,6 +32,12 @@ type clientCodec struct {
 func (codec *clientCodec) WriteRequest(request *rpc.Request, params interface{}) (err error) {
     httpRequest, err := newRequest(codec.url, request.ServiceMethod, params)
 
+    if codec.cookies != nil {
+        for _, cookie := range codec.cookies {
+            httpRequest.AddCookie(cookie)
+        }
+    }
+
     if err != nil {
         return err
     }
@@ -40,6 +49,7 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, params interface{})
         return err
     }
 
+    codec.cookies = httpResponse.Cookies()
     codec.responses[request.Seq] = httpResponse
     codec.ready <- request.Seq
 

@@ -12,11 +12,11 @@ type Struct map[string]interface{}
 
 // xmlrpcError represents errors returned on xmlrpc request.
 type xmlrpcError struct {
-    code int64
+    code string
     message string
 }
 
 // Error() method implements Error interface
 func (e *xmlrpcError) Error() string {
-    return fmt.Sprintf("Error: \"%s\" Code: %d", e.message, e.code)
+    return fmt.Sprintf("Error: \"%s\" Code: %s", e.message, e.code)
 }

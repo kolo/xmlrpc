@@ -1,6 +1,7 @@
 package xmlrpc
 
 import (
+    "fmt"
     "regexp"
 )
 
@@ -41,7 +42,10 @@ func parseFailedResponse(response []byte) (err error) {
         return err
     }
 
-    return &(xmlrpcError{code: faultDetails["faultCode"].(int64), message: faultDetails["faultString"].(string)})
+    return &(xmlrpcError{
+        code: fmt.Sprintf("%v", faultDetails["faultCode"]),
+        message: faultDetails["faultString"].(string),
+    })
 }
 
 func getValueXml(rawXml []byte) ([]byte) {
