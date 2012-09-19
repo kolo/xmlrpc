@@ -7,6 +7,10 @@ import (
     "reflect"
 )
 
+type Client struct {
+    *rpc.Client
+}
+
 // clientCodec is rpc.ClientCodec interface implementation.
 type clientCodec struct {
     // url presents url of xmlrpc service
@@ -100,7 +104,7 @@ func (codec *clientCodec) Close() error {
 }
 
 // NewClient returns instance of rpc.Client object, that is used to send request to xmlrpc service.
-func NewClient(url string, transport *http.Transport) (*rpc.Client, error) {
+func NewClient(url string, transport *http.Transport) (*Client, error) {
     if transport == nil {
         transport = &http.Transport{}
     }
@@ -114,5 +118,5 @@ func NewClient(url string, transport *http.Transport) (*rpc.Client, error) {
         responses: make(map[uint64]*http.Response),
     }
 
-    return rpc.NewClientWithCodec(&codec), nil
+    return &Client{ rpc.NewClientWithCodec(&codec) }, nil
 }

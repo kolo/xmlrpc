@@ -9,6 +9,9 @@ import (
     "time"
 )
 
+// TIME_LAYOUT defines time template defined by iso8601, used to encode/decode time values.
+const TIME_LAYOUT = "20060102T15:04:05"
+
 func parseValue(valueXml []byte) (result interface{}, err error) {
     parser := xml.NewDecoder(bytes.NewReader(valueXml))
     result, err = getValue(parser)
