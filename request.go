@@ -1,7 +1,9 @@
 package xmlrpc
 
 import (
+    "bytes"
     "fmt"
+    "encoding/xml"
     "net/http"
     "reflect"
     "strings"
@@ -50,7 +52,8 @@ func buildValueElement(value interface{}) (buffer string) {
     case Struct:
         buffer += buildStructElement(v)
     case string:
-        buffer += fmt.Sprintf("<string>%s</string>", v)
+        escaped := escapeString(value.(string))
+        buffer += fmt.Sprintf("<string>%s</string>", escaped)
     case int, int8, int16, int32, int64:
         buffer += fmt.Sprintf("<int>%d</int>", v)
     case float32, float64:
@@ -118,4 +121,11 @@ func buildArrayElement(array interface{}) string {
     buffer += `</data></array>`
 
     return buffer
+}
+
+func escapeString(s string) string {
+    buffer := bytes.NewBuffer([]byte{})
+    xml.Escape(buffer, []byte(s))
+
+    return fmt.Sprintf("%v", buffer)
 }
