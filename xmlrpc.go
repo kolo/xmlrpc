@@ -7,6 +7,11 @@ import (
 // Struct presents hash type used in xmlprc requests and responses.
 type Struct map[string]interface{}
 
+// Params represents a list of parameters to a method.
+type Params struct{
+	Params []interface{}
+}
+
 // xmlrpcError represents errors returned on xmlrpc request.
 type xmlrpcError struct {
     code string
