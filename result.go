@@ -53,6 +53,11 @@ func getValue(parser *xml.Decoder) (result interface{}, err error) {
             if t.Name.Local == "value" {
                 return result, nil
             }
+		case xml.CharData:
+			cdata := strings.TrimSpace(string(t))
+			if cdata != "" {
+				result = cdata
+			}
         }
 
         token, err = parser.Token()
