@@ -28,12 +28,21 @@ func buildRequestBody(method string, params []interface{}) (buffer string) {
     buffer += `<?xml version="1.0" encoding="UTF-8"?><methodCall>`
     buffer += fmt.Sprintf("<methodName>%s</methodName><params>", method)
 
-    if params != nil && len(params) > 0 {
-        for _, value := range params {
-            if value != nil {
-                buffer += buildParamElement(value)
-            }
-        }
+	if params != nil && len(params) > 0 {
+		for _, value := range params {
+			if value != nil {
+				switch ps := value.(type) {
+				case Params:
+					for _, p := range ps.Params {
+						if p != nil {
+							buffer += buildParamElement(p)
+						}
+					}
+				default:
+					buffer += buildParamElement(ps)
+				}
+			}
+		}
     }
 
     buffer += "</params></methodCall>"
