@@ -11,7 +11,7 @@ statement.
 
 ## Usage
 
-    client, _ := xmlrpc.NewClient('https://bugzilla.mozilla.org/xmlrpc.cgi', nil)
+    client, _ := xmlrpc.NewClient("https://bugzilla.mozilla.org/xmlrpc.cgi", nil)
     result := xmlrpc.Struct{}
     client.Call("Bugzilla.version", nil, &result)
     fmt.Printf("Version: %s\n", result["version"]) // Version: 4.0.8+
