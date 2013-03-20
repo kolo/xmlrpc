@@ -12,6 +12,11 @@ class Bugzilla
     puts "#login"
     {id: 120}
   end
+
+	def error
+		puts "#error"
+		raise XMLRPC::FaultException.new("101", "Error occuried.")
+	end
 end
 
 server = XMLRPC::Server.new 5001, 'localhost'

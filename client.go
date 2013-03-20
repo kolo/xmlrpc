@@ -1,6 +1,7 @@
 package xmlrpc
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/rpc"
@@ -75,21 +76,29 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 
 	httpResponse.Body.Close()
 
+	if fault, _ := responseFailed(codec.responseBody); fault {
+		response.Error = fmt.Sprintf("%v", parseFailedResponse(codec.responseBody))
+	}
+
 	response.Seq = seq
 	delete(codec.responses, seq)
 
 	return nil
 }
 
-func (codec *clientCodec) ReadResponseBody(body interface{}) (err error) {
+func (codec *clientCodec) ReadResponseBody(x interface{}) (err error) {
+	if (x == nil) {
+		return nil
+	}
+
 	var result interface{}
-	result, err = parseResponse(codec.responseBody)
+	result, err = parseSuccessfulResponse(codec.responseBody)
 
 	if err != nil {
 		return err
 	}
 
-	v := reflect.ValueOf(body)
+	v := reflect.ValueOf(x)
 
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()

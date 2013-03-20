@@ -5,19 +5,6 @@ import (
 	"regexp"
 )
 
-func parseResponse(response []byte) (result interface{}, err error) {
-	if fault, _ := responseFailed(response); fault {
-		return nil, parseFailedResponse(response)
-	}
-
-	return parseSuccessfulResponse(response)
-}
-
-func parseSuccessfulResponse(response []byte) (interface{}, error) {
-	valueXml := getValueXml(response)
-	return parseValue(valueXml)
-}
-
 // responseFailed checks whether response failed or not. Response defined as failed if it
 // contains <fault>...</fault> section.
 func responseFailed(response []byte) (bool, error) {
@@ -29,6 +16,11 @@ func responseFailed(response []byte) (bool, error) {
 	}
 
 	return fault, err
+}
+
+func parseSuccessfulResponse(response []byte) (interface{}, error) {
+	valueXml := getValueXml(response)
+	return parseValue(valueXml)
 }
 
 func parseFailedResponse(response []byte) (err error) {
