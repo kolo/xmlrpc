@@ -122,9 +122,7 @@ func buildArrayElement(array interface{}) string {
 	buffer := `<array><data>`
 
 	for _, value := range array.([]interface{}) {
-		buffer += `<value>`
 		buffer += buildValueElement(value)
-		buffer += `</value>`
 	}
 
 	buffer += `</data></array>`
