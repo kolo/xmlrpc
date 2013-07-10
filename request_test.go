@@ -53,3 +53,10 @@ func Test_buildRequestBody(t *testing.T) {
 	assert_equal(t, xml_request.Params[0], xml_expected.Params[0])
 	assert_equal(t, xml_request.Params[1], xml_expected.Params[1])
 }
+
+func Test_buildArrayElement(t *testing.T) {
+	a := []interface{}{1}
+	var arrayElement = buildArrayElement(a)
+
+	assert_equal(t, arrayElement, "<array><data><value><int>1</int></value></data></array>")
+}
