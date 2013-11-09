@@ -19,7 +19,7 @@ func newRequest(url string, method string, params ...interface{}) (*http.Request
 	}
 
 	request.Header.Set("Content-Type", "text/xml")
-	request.Header.Set("Content-Lenght", fmt.Sprintf("%d", len(body)))
+	request.Header.Set("Content-Length", fmt.Sprintf("%d", len(body)))
 
 	return request, nil
 }
