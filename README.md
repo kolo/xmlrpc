@@ -6,7 +6,7 @@ it implements only client side part of XMLRPC.
 ## Installation
 
 To install xmlrpc package run `go get github.com/kolo/xmlrpc`. To use
-it in application add `"github.com/kolo/xmlprc"` string to `import`
+it in application add `"github.com/kolo/xmlrpc"` string to `import`
 statement.
 
 ## Usage
