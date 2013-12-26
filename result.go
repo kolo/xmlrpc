@@ -38,7 +38,7 @@ func getValue(parser *xml.Decoder) (result interface{}, err error) {
 				return getDateValue(parser)
 			case "double":
 				return getDoubleValue(parser)
-			case "int", "i4":
+			case "int", "i4", "i8":
 				return getIntValue(parser)
 			case "string":
 				return getStringValue(parser)
