@@ -76,8 +76,8 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 
 	httpResponse.Body.Close()
 
-	if fault, _ := responseFailed(codec.responseBody); fault {
-		response.Error = fmt.Sprintf("%v", parseFailedResponse(codec.responseBody))
+	if fault, _ := ResponseFailed(codec.responseBody); fault {
+		response.Error = fmt.Sprintf("%v", ParseFailedResponse(codec.responseBody))
 	}
 
 	response.Seq = seq
@@ -92,7 +92,7 @@ func (codec *clientCodec) ReadResponseBody(x interface{}) (err error) {
 	}
 
 	var result interface{}
-	result, err = parseSuccessfulResponse(codec.responseBody)
+	result, err = ParseSuccessfulResponse(codec.responseBody)
 
 	if err != nil {
 		return err
