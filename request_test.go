@@ -44,7 +44,7 @@ func Test_buildRequestBody(t *testing.T) {
 	xml.Unmarshal([]byte(PARAMS_REQUEST), &xml_expected)
 
 	params := Params{Params: []interface{}{"user", "pass"}}
-	request := buildRequestBody("method", []interface{}{params})
+	request := BuildRequestBody("method", []interface{}{params})
 
 	var xml_request MethodCall
 	xml.Unmarshal([]byte(request), &xml_request)

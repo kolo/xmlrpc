@@ -41,7 +41,7 @@ const FAULT_RESPONSE_BODY = `
 </methodResponse>`
 
 func Test_parseResponseBody_SuccessfulResponse(t *testing.T) {
-	result, err := parseSuccessfulResponse([]byte(RESPONSE_BODY))
+	result, err := ParseSuccessfulResponse([]byte(RESPONSE_BODY))
 
 	if err != nil {
 		t.Fatalf("parseResponse raised error: %v", err)
@@ -52,7 +52,7 @@ func Test_parseResponseBody_SuccessfulResponse(t *testing.T) {
 }
 
 func Test_parseResponseBody_FaultResponse(t *testing.T) {
-	err := parseFailedResponse([]byte(FAULT_RESPONSE_BODY))
+	err := ParseFailedResponse([]byte(FAULT_RESPONSE_BODY))
 	assert_not_nil(t, err)
 }
 
@@ -78,7 +78,7 @@ const XENAPI_RESPONSE = `
 `
 
 func Test_parse_XenAPI_ResponseBody(t *testing.T) {
-	result, err := parseSuccessfulResponse([]byte(XENAPI_RESPONSE))
+	result, err := ParseSuccessfulResponse([]byte(XENAPI_RESPONSE))
 
 	expected := map[string]string{
 		"Value":  "OpaqueRef:4b40767e-bc91-ca34-7e11-0ca46bb6b3e0",
