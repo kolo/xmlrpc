@@ -7,7 +7,7 @@ import (
 
 // responseFailed checks whether response failed or not. Response defined as failed if it
 // contains <fault>...</fault> section.
-func responseFailed(response []byte) (bool, error) {
+func ResponseFailed(response []byte) (bool, error) {
 	fault := true
 	faultRegexp, err := regexp.Compile(`<fault>(\s|\S)+</fault>`)
 
@@ -18,12 +18,12 @@ func responseFailed(response []byte) (bool, error) {
 	return fault, err
 }
 
-func parseSuccessfulResponse(response []byte) (interface{}, error) {
+func ParseSuccessfulResponse(response []byte) (interface{}, error) {
 	valueXml := getValueXml(response)
 	return parseValue(valueXml)
 }
 
-func parseFailedResponse(response []byte) (err error) {
+func ParseFailedResponse(response []byte) (err error) {
 	var valueXml []byte
 	valueXml = getValueXml(response)
 

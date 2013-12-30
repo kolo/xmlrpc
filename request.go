@@ -11,7 +11,7 @@ import (
 )
 
 func newRequest(url string, method string, params ...interface{}) (*http.Request, error) {
-	body := buildRequestBody(method, params)
+	body := BuildRequestBody(method, params)
 	request, err := http.NewRequest("POST", url, strings.NewReader(body))
 
 	if err != nil {
@@ -24,7 +24,7 @@ func newRequest(url string, method string, params ...interface{}) (*http.Request
 	return request, nil
 }
 
-func buildRequestBody(method string, params []interface{}) (buffer string) {
+func BuildRequestBody(method string, params []interface{}) (buffer string) {
 	buffer += `<?xml version="1.0" encoding="UTF-8"?><methodCall>`
 	buffer += fmt.Sprintf("<methodName>%s</methodName><params>", method)
 
