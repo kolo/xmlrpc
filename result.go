@@ -40,6 +40,8 @@ func getValue(parser *xml.Decoder) (result interface{}, err error) {
 				return getDoubleValue(parser)
 			case "int", "i4", "i8":
 				return getIntValue(parser)
+			case "base64":
+				return getBase64Value(parser)
 			case "string":
 				return getStringValue(parser)
 			case "struct":
@@ -103,6 +105,10 @@ func getIntValue(parser *xml.Decoder) (interface{}, error) {
 	number, err := strconv.ParseInt(value, 0, 64)
 
 	return number, err
+}
+
+func getBase64Value(parser *xml.Decoder) (string, error) {
+	return getElementValue(parser)
 }
 
 func getStringValue(parser *xml.Decoder) (string, error) {

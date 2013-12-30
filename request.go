@@ -60,6 +60,9 @@ func buildValueElement(value interface{}) (buffer string) {
 	switch v := value.(type) {
 	case Struct:
 		buffer += buildStructElement(v)
+	case Base64:
+		escaped := escapeString(string(v))
+		buffer += fmt.Sprintf("<base64>%s</base64>", escaped)
 	case string:
 		escaped := escapeString(value.(string))
 		buffer += fmt.Sprintf("<string>%s</string>", escaped)

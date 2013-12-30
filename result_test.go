@@ -21,6 +21,11 @@ func Test_parseValue_Int(t *testing.T) {
 }
 
 func Test_parseValue_String(t *testing.T) {
+	result, _ := parseValue([]byte("<value><base64>SGVsbG8sIHdvcmxkIQ==</base64></value>"))
+	assert_equal(t, "Hello, world!", result)
+}
+
+func Test_parseValue_Base64(t *testing.T) {
 	result, _ := parseValue([]byte("<value><string>Hello, world!</string></value>"))
 	assert_equal(t, "Hello, world!", result)
 }
