@@ -5,27 +5,27 @@ import (
 	"regexp"
 )
 
-// responseFailed checks whether response failed or not. Response defined as failed if it
-// contains <fault>...</fault> section.
-func responseFailed(response []byte) (bool, error) {
-	fault := true
-	faultRegexp, err := regexp.Compile(`<fault>(\s|\S)+</fault>`)
+var (
+	faultRx = regexp.MustCompile(`<fault>(\s|\S)+</fault>`)
+)
 
-	if err == nil {
-		fault = faultRegexp.Match(response)
+type Response struct {
+	data []byte
+}
+
+func NewResponse(data []byte) *Response {
+	return &Response{
+		data: data,
 	}
-
-	return fault, err
 }
 
-func parseSuccessfulResponse(response []byte) (interface{}, error) {
-	valueXml := getValueXml(response)
-	return parseValue(valueXml)
+func (r *Response) Failed() bool {
+	return faultRx.Match(r.data)
 }
 
-func parseFailedResponse(response []byte) (err error) {
+func (r *Response) Err() error {
 	var valueXml []byte
-	valueXml = getValueXml(response)
+	valueXml = getValueXml(r.data)
 
 	value, err := parseValue(valueXml)
 	faultDetails := value.(Struct)
@@ -39,6 +39,12 @@ func parseFailedResponse(response []byte) (err error) {
 		message: faultDetails["faultString"].(string),
 	})
 }
+
+func parseSuccessfulResponse(response []byte) (interface{}, error) {
+	valueXml := getValueXml(response)
+	return parseValue(valueXml)
+}
+
 
 func getValueXml(rawXml []byte) []byte {
 	expr, _ := regexp.Compile(`<value>(\s|\S)+</value>`)

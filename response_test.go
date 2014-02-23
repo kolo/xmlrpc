@@ -52,8 +52,9 @@ func Test_parseResponseBody_SuccessfulResponse(t *testing.T) {
 }
 
 func Test_parseResponseBody_FaultResponse(t *testing.T) {
-	err := parseFailedResponse([]byte(FAULT_RESPONSE_BODY))
-	assert_not_nil(t, err)
+	resp := NewResponse([]byte(FAULT_RESPONSE_BODY))
+	assert_equal(t, true, resp.Failed())
+	assert_not_nil(t, resp.Err())
 }
 
 const XENAPI_RESPONSE = `

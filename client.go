@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/rpc"
 	"reflect"
-	"errors"
 )
 
 type Client struct {
@@ -28,8 +27,7 @@ type clientCodec struct {
 	// rpc.Client can mark them as done.
 	responses map[uint64]*http.Response
 
-	// responseBody holds response body of last request.
-	responseBody []byte
+	response *Response
 
 	// ready presents channel, that is used to link request and it`s response.
 	ready chan uint64
@@ -69,11 +67,7 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	seq := <-codec.ready
 	httpResponse := codec.responses[seq]
 
-	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
-		return errors.New(fmt.Sprintf("Bad status code: %s", httpResponse.Status))
-	}
-
-	codec.responseBody, err = ioutil.ReadAll(httpResponse.Body)
+	respData, err := ioutil.ReadAll(httpResponse.Body)
 
 	if err != nil {
 		return err
@@ -81,9 +75,13 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 
 	httpResponse.Body.Close()
 
-	if fault, _ := responseFailed(codec.responseBody); fault {
-		response.Error = fmt.Sprintf("%v", parseFailedResponse(codec.responseBody))
+	resp := NewResponse(respData)
+
+	if resp.Failed() {
+		response.Error = fmt.Sprintf("%v", resp.Err())
 	}
+
+	codec.response = resp
 
 	response.Seq = seq
 	delete(codec.responses, seq)
@@ -97,7 +95,7 @@ func (codec *clientCodec) ReadResponseBody(x interface{}) (err error) {
 	}
 
 	var result interface{}
-	result, err = parseSuccessfulResponse(codec.responseBody)
+	result, err = parseSuccessfulResponse(codec.response.data)
 
 	if err != nil {
 		return err
