@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"reflect"
+	"errors"
 )
 
 type Client struct {
@@ -68,6 +69,10 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	seq := <-codec.ready
 	httpResponse := codec.responses[seq]
 
+	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
+		return errors.New(fmt.Sprintf("Bad status code: %s", httpResponse.Status))
+	}
+
 	codec.responseBody, err = ioutil.ReadAll(httpResponse.Body)
 
 	if err != nil {
@@ -116,7 +121,7 @@ func (codec *clientCodec) Close() error {
 }
 
 // NewClient returns instance of rpc.Client object, that is used to send request to xmlrpc service.
-func NewClient(url string, transport *http.Transport) (*Client, error) {
+func NewClient(url string, transport http.RoundTripper) (*Client, error) {
 	if transport == nil {
 		transport = &http.Transport{}
 	}
