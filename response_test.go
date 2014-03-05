@@ -41,19 +41,22 @@ const FAULT_RESPONSE_BODY = `
 </methodResponse>`
 
 func Test_parseResponseBody_SuccessfulResponse(t *testing.T) {
-	result, err := parseSuccessfulResponse([]byte(RESPONSE_BODY))
-
-	if err != nil {
+	resp := NewResponse([]byte(RESPONSE_BODY))
+	var result time.Time
+	if err := resp.Unmarshal(&result); err != nil {
 		t.Fatalf("parseResponse raised error: %v", err)
 	}
 
 	time, _ := time.Parse("2006012T15:04:05", "20120911T18:16:01")
-	assert_equal(t, time, result)
+	if result != time {
+		t.Fatalf("Response#Unmarshal error: expected %v = %v", result, time)
+	}
 }
 
 func Test_parseResponseBody_FaultResponse(t *testing.T) {
 	resp := NewResponse([]byte(FAULT_RESPONSE_BODY))
 	assert_equal(t, true, resp.Failed())
+	t.Log(resp.Err())
 	assert_not_nil(t, resp.Err())
 }
 
@@ -78,15 +81,25 @@ const XENAPI_RESPONSE = `
 </methodResponse>
 `
 
+type XenApiResult struct {
+	Value string
+	Status string
+}
+
 func Test_parse_XenAPI_ResponseBody(t *testing.T) {
-	result, err := parseSuccessfulResponse([]byte(XENAPI_RESPONSE))
+	resp := NewResponse([]byte(XENAPI_RESPONSE))
+
+	result := &XenApiResult{}
+	err := resp.Unmarshal(result)
 
 	expected := map[string]string{
 		"Value":  "OpaqueRef:4b40767e-bc91-ca34-7e11-0ca46bb6b3e0",
 		"Status": "Success",
 	}
 
+	t.Log(err)
+
 	assert_nil(t, err)
-	assert_equal(t, result.(Struct)["Value"], expected["Value"])
-	assert_equal(t, result.(Struct)["Status"], expected["Status"])
+	assert_equal(t, result.Value, expected["Value"])
+	assert_equal(t, result.Status, expected["Status"])
 }

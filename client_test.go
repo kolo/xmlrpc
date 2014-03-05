@@ -27,13 +27,15 @@ func Test_Client_CallWithParams(t *testing.T) {
 
 	defer client.Close()
 
-	var result = Struct{}
-	if err = client.Call("bugzilla.login", Struct{"username": "joe", "password": "secret"}, &result); err != nil {
+	result := &struct{
+		Id int `xmlrpc:"id"`
+	}{}
+
+	if err = client.Call("bugzilla.login", Struct{"username": "joe", "password": "secret"}, result); err != nil {
 		t.Fatal(err)
 	}
 
-	var id int64 = 120
-	assert_equal(t, id, result["id"])
+	assert_equal(t, 120, result.Id)
 }
 
 func Test_Client_TwoCalls(t *testing.T) {
@@ -42,7 +44,7 @@ func Test_Client_TwoCalls(t *testing.T) {
 
 	defer client.Close()
 
-	var result = Struct{}
+	var result string
 	err = client.Call("bugzilla.error", nil, &result)
 	assert_not_nil(t, err)
 

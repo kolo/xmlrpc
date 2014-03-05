@@ -15,7 +15,7 @@ class Bugzilla
 
 	def error
 		puts "#error"
-		raise XMLRPC::FaultException.new("101", "Error occuried.")
+		raise XMLRPC::FaultException.new(101, "Error occuried.")
 	end
 end
 

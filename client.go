@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/rpc"
-	"reflect"
 )
 
 type Client struct {
@@ -89,25 +88,14 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	return nil
 }
 
-func (codec *clientCodec) ReadResponseBody(x interface{}) (err error) {
-	if (x == nil) {
+func (codec *clientCodec) ReadResponseBody(v interface{}) (err error) {
+	if (v == nil) {
 		return nil
 	}
 
-	var result interface{}
-	result, err = parseSuccessfulResponse(codec.response.data)
-
-	if err != nil {
+	if err = codec.response.Unmarshal(v); err != nil {
 		return err
 	}
-
-	v := reflect.ValueOf(x)
-
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	v.Set(reflect.ValueOf(result))
 
 	return nil
 }

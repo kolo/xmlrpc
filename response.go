@@ -1,13 +1,24 @@
 package xmlrpc
 
 import (
-	"fmt"
 	"regexp"
 )
 
 var (
 	faultRx = regexp.MustCompile(`<fault>(\s|\S)+</fault>`)
 )
+
+type failedResponse struct {
+	Code  int    `xmlrpc:"faultCode"`
+	Error string `xmlrpc:"faultString"`
+}
+
+func (r *failedResponse) err() error {
+	return &xmlrpcError{
+		code: r.Code,
+		err:  r.Error,
+	}
+}
 
 type Response struct {
 	data []byte
@@ -24,30 +35,18 @@ func (r *Response) Failed() bool {
 }
 
 func (r *Response) Err() error {
-	var valueXml []byte
-	valueXml = getValueXml(r.data)
-
-	value, err := parseValue(valueXml)
-	faultDetails := value.(Struct)
-
-	if err != nil {
+	failedResp := new(failedResponse)
+	if err := unmarshal(r.data, failedResp); err != nil {
 		return err
 	}
 
-	return &(xmlrpcError{
-		code:    fmt.Sprintf("%v", faultDetails["faultCode"]),
-		message: faultDetails["faultString"].(string),
-	})
+	return failedResp.err()
 }
 
-func parseSuccessfulResponse(response []byte) (interface{}, error) {
-	valueXml := getValueXml(response)
-	return parseValue(valueXml)
-}
+func (r *Response) Unmarshal(v interface{}) error {
+	if err := unmarshal(r.data, v); err != nil {
+		return err
+	}
 
-
-func getValueXml(rawXml []byte) []byte {
-	expr, _ := regexp.Compile(`<value>(\s|\S)+</value>`)
-	return expr.Find(rawXml)
-
+	return nil
 }
