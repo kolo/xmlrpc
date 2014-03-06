@@ -33,7 +33,7 @@ type clientCodec struct {
 }
 
 func (codec *clientCodec) WriteRequest(request *rpc.Request, params interface{}) (err error) {
-	httpRequest, err := newRequest(codec.url, request.ServiceMethod, params)
+	httpRequest, err := NewRequest(codec.url, request.ServiceMethod, params)
 
 	if codec.cookies != nil {
 		for _, cookie := range codec.cookies {
