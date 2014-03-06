@@ -12,6 +12,10 @@ import (
 type encodeFunc func(reflect.Value) ([]byte, error)
 
 func marshal(v interface{}) ([]byte, error) {
+	if v == nil {
+		return []byte{}, nil
+	}
+
 	val := reflect.ValueOf(v)
 	return encodeValue(val)
 }
@@ -33,8 +37,7 @@ func encodeValue(val reflect.Value) ([]byte, error) {
 		switch val.Interface().(type) {
 		case time.Time:
 			t := val.Interface().(time.Time)
-			b = []byte(fmt.Sprintf("<dateTime.iso8601>%s</dateTime.iso8601>",
-				t.Format(time.RFC3339)))
+			b = []byte(fmt.Sprintf("<dateTime.iso8601>%s</dateTime.iso8601>", t.Format(iso8601)))
 		default:
 			b, err = encodeStruct(val)
 		}

@@ -32,8 +32,8 @@ type clientCodec struct {
 	ready chan uint64
 }
 
-func (codec *clientCodec) WriteRequest(request *rpc.Request, params interface{}) (err error) {
-	httpRequest, err := NewRequest(codec.url, request.ServiceMethod, params)
+func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (err error) {
+	httpRequest, err := NewRequest(codec.url, request.ServiceMethod, args)
 
 	if codec.cookies != nil {
 		for _, cookie := range codec.cookies {

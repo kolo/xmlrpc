@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const TIME_LAYOUT = "20060102T15:04:05"
+const iso8601 = "20060102T15:04:05"
 
 var (
 	invalidXmlError   = errors.New("invalid xml")
@@ -212,7 +212,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 		case "string":
 			val.SetString(string(data))
 		case "dateTime.iso8601":
-			t, err := time.Parse(TIME_LAYOUT, string(data))
+			t, err := time.Parse(iso8601, string(data))
 			if err != nil {
 				return err
 			}

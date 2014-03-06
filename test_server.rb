@@ -2,23 +2,24 @@
 
 require "xmlrpc/server"
 
-class Bugzilla
+class Service
   def time
-    puts "#time"
     Time.now
   end
 
-  def login(opts)
-    puts "#login"
-    {id: 120}
+  def upcase(s)
+    s.upcase
+  end
+
+  def sum(x, y)
+    x + y
   end
 
 	def error
-		puts "#error"
 		raise XMLRPC::FaultException.new(101, "Error occuried.")
 	end
 end
 
 server = XMLRPC::Server.new 5001, 'localhost'
-server.add_handler "bugzilla", Bugzilla.new
+server.add_handler "service", Service.new
 server.serve
