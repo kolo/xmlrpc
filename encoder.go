@@ -72,43 +72,50 @@ func encodeValue(val reflect.Value) ([]byte, error) {
 }
 
 func encodeStruct(val reflect.Value) ([]byte, error) {
-	var buf bytes.Buffer
+	var b bytes.Buffer
+
+	b.WriteString("<struct>")
 
 	t := val.Type()
 	for i := 0; i < t.NumField(); i++ {
+		b.WriteString("<member>")
 		f := t.Field(i)
 
 		name := f.Tag.Get("xmlrpc")
 		if name == "" {
 			name = f.Name
 		}
+		b.WriteString(fmt.Sprintf("<name>%s</name>", name))
 
-		b, err := encodeValue(val.FieldByName(f.Name))
+		p, err := encodeValue(val.FieldByName(f.Name))
 		if err != nil {
 			return nil, err
 		}
+		b.Write(p)
 
-		if _, err = fmt.Fprintf(&buf, "<member><name>%s</name>%s</member>", name, string(b)); err != nil {
-			return nil, err
-		}
+		b.WriteString("</member>")
 	}
 
-	return []byte(fmt.Sprintf("<struct>%s</struct>", buf.String())), nil
+	b.WriteString("</struct>")
+
+	return b.Bytes(), nil
 }
 
 func encodeSlice(val reflect.Value) ([]byte, error) {
-	var buf bytes.Buffer
+	var b bytes.Buffer
+
+	b.WriteString("<array>")
 
 	for i := 0; i < val.Len(); i++ {
-		b, err := encodeValue(val.Index(i))
+		p, err := encodeValue(val.Index(i))
 		if err != nil {
 			return nil, err
 		}
 
-		if _, err = buf.Write(b); err != nil {
-			return nil, err
-		}
+		b.Write(p)
 	}
 
-	return []byte(fmt.Sprintf("<array>%s</array>", buf.String())), nil
+	b.WriteString("</array>")
+
+	return b.Bytes(), nil
 }

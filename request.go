@@ -7,7 +7,7 @@ import (
 )
 
 func NewRequest(url string, method string, args interface{}) (*http.Request, error) {
-	body, err := EncodeRequest(method, args)
+	body, err := EncodeMethodCall(method, args)
 	if err != nil {
 		return nil, err
 	}
@@ -23,18 +23,13 @@ func NewRequest(url string, method string, args interface{}) (*http.Request, err
 	return request, nil
 }
 
-func EncodeRequest(method string, args interface{}) ([]byte, error) {
-	buf := bytes.NewBufferString(`<?xml version="1.0" encoding="UTF-8"?>`)
-	var err error
-
-	if _, err = fmt.Fprintf(buf, "<methodCall><methodName>%s</methodName>", method); err != nil {
-		return nil, err
-	}
+func EncodeMethodCall(method string, args interface{}) ([]byte, error) {
+	var b bytes.Buffer
+	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
+	b.WriteString(fmt.Sprintf("<methodCall><methodName>%s</methodName>", method))
 
 	if args != nil {
-		if _, err = fmt.Fprintf(buf, "<params>"); err != nil {
-			return nil, err
-		}
+		b.WriteString("<params>")
 
 		var t []interface{}
 		var ok bool
@@ -43,24 +38,18 @@ func EncodeRequest(method string, args interface{}) ([]byte, error) {
 		}
 
 		for _, arg := range t {
-			b, err := marshal(arg)
+			p, err := marshal(arg)
 			if err != nil {
 				return nil, err
 			}
 
-			if _, err = fmt.Fprintf(buf, "<param>%s</param>", string(b)); err != nil {
-				return nil, err
-			}
+			b.WriteString(fmt.Sprintf("<param>%s</param>", string(p)))
 		}
 
-		if _, err = fmt.Fprintf(buf, "</params>"); err != nil {
-			return nil, err
-		}
+		b.WriteString("</params>")
 	}
 
-	if _, err = buf.WriteString("</methodCall>"); err != nil {
-		return nil, err
-	}
+	b.WriteString("</methodCall>")
 
-	return buf.Bytes(), nil
+	return b.Bytes(), nil
 }
