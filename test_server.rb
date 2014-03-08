@@ -16,7 +16,7 @@ class Service
   end
 
 	def error
-		raise XMLRPC::FaultException.new(101, "Error occuried.")
+		raise XMLRPC::FaultException.new(500, "Server error")
 	end
 end
 

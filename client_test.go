@@ -59,6 +59,17 @@ func Test_TwoCalls(t *testing.T) {
 
 }
 
+func Test_FailedCall(t *testing.T) {
+	client := newClient(t)
+	defer client.Close()
+
+	var result int
+	var err error
+	if err = client.Call("service.error", nil, &result); err == nil {
+		t.Fatal("expected service.error returns error, but it didn't")
+	}
+}
+
 func newClient(t *testing.T) *Client {
 	client, err := NewClient("http://localhost:5001", nil)
 	if err != nil {

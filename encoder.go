@@ -104,7 +104,7 @@ func encodeStruct(val reflect.Value) ([]byte, error) {
 func encodeSlice(val reflect.Value) ([]byte, error) {
 	var b bytes.Buffer
 
-	b.WriteString("<array>")
+	b.WriteString("<array><data>")
 
 	for i := 0; i < val.Len(); i++ {
 		p, err := encodeValue(val.Index(i))
@@ -115,7 +115,7 @@ func encodeSlice(val reflect.Value) ([]byte, error) {
 		b.Write(p)
 	}
 
-	b.WriteString("</array>")
+	b.WriteString("</data></array>")
 
 	return b.Bytes(), nil
 }

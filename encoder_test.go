@@ -1,13 +1,13 @@
 package xmlrpc
 
 import (
-	"time"
 	"testing"
+	"time"
 )
 
 var marshalTests = []struct {
-	value  interface{}
-	result string
+	value interface{}
+	xml   string
 }{
 	{100, "<value><int>100</int></value>"},
 	{"Once upon a time", "<value><string>Once upon a time</string></value>"},
@@ -17,9 +17,9 @@ var marshalTests = []struct {
 	{12.134, "<value><double>12.134</double></value>"},
 	{-12.134, "<value><double>-12.134</double></value>"},
 	{time.Unix(1386622812, 0).UTC(), "<value><dateTime.iso8601>20131209T21:00:12</dateTime.iso8601></value>"},
-	{[]interface{}{1,"one"}, "<value><array><value><int>1</int></value><value><string>one</string></value></array></value>"},
-	{&struct{
-		Title string
+	{[]interface{}{1, "one"}, "<value><array><data><value><int>1</int></value><value><string>one</string></value></data></array></value>"},
+	{&struct {
+		Title  string
 		Amount int
 	}{"War and Piece", 20}, "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
 }
@@ -31,8 +31,8 @@ func Test_marshal(t *testing.T) {
 			t.Fatalf("unexpected marshal error: %v", err)
 		}
 
-		if string(b) != tt.result {
-			t.Fatalf("marshal error:\nexpected: %s\n     got: %s", tt.result, string(b))
+		if string(b) != tt.xml {
+			t.Fatalf("marshal error:\nexpected: %s\n     got: %s", tt.xml, string(b))
 		}
 
 	}
