@@ -12,7 +12,7 @@ type xmlrpcError struct {
 
 // Error() method implements Error interface
 func (e *xmlrpcError) Error() string {
-	return fmt.Sprintf("Error: \"%s\" Code: %d", e.err, e.code)
+	return fmt.Sprintf("error: \"%s\" code: %d", e.err, e.code)
 }
 
 // Base64 represents value in base64 encoding

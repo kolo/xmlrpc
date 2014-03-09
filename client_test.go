@@ -64,8 +64,7 @@ func Test_FailedCall(t *testing.T) {
 	defer client.Close()
 
 	var result int
-	var err error
-	if err = client.Call("service.error", nil, &result); err == nil {
+	if err := client.Call("service.error", nil, &result); err == nil {
 		t.Fatal("expected service.error returns error, but it didn't")
 	}
 }

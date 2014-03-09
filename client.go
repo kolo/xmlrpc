@@ -66,6 +66,10 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	seq := <-codec.ready
 	httpResponse := codec.responses[seq]
 
+	if httpResponse.StatusCode != http.StatusOK {
+		return fmt.Errorf("request error: bad status code - %d", httpResponse.StatusCode)
+	}
+
 	respData, err := ioutil.ReadAll(httpResponse.Body)
 
 	if err != nil {
