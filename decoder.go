@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"reflect"
 	"strconv"
@@ -17,6 +18,10 @@ var (
 	invalidXmlError   = errors.New("invalid xml")
 	typeMismatchError = errors.New("type mismatch")
 )
+
+type TypeMismatchError string
+
+func (e TypeMismatchError) Error() string { return string(e) }
 
 type decoder struct {
 	*xml.Decoder
@@ -73,7 +78,10 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 		// Treat value data without type identifier as string
 		if t, ok := tok.(xml.CharData); ok {
 			if value := strings.TrimSpace(string(t)); value != "" {
-				typeName = "string"
+				if err = checkType(val, reflect.String); err != nil {
+					return err
+				}
+
 				val.SetString(value)
 				return nil
 			}
@@ -82,6 +90,10 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 
 	switch typeName {
 	case "struct":
+		if err = checkType(val, reflect.Struct); err != nil {
+			return err
+		}
+
 		fields := make(map[string]reflect.Value)
 
 		valType := val.Type()
@@ -143,11 +155,16 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			}
 		}
 	case "array":
+		if err = checkType(val, reflect.Slice); err != nil {
+			return err
+		}
+
 	ArrayLoop:
 		for {
 			if tok, err = dec.Token(); err != nil {
 				return err
 			}
+
 			switch t := tok.(type) {
 			case xml.StartElement:
 				if t.Name.Local != "data" {
@@ -203,6 +220,10 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 
 		switch typeName {
 		case "int", "i4":
+			if err = checkType(val, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64); err != nil {
+				return err
+			}
+
 			i, err := strconv.ParseInt(string(data), 10, val.Type().Bits())
 			if err != nil {
 				return err
@@ -210,8 +231,16 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 
 			val.SetInt(i)
 		case "string":
+			if err = checkType(val, reflect.String); err != nil {
+				return err
+			}
+
 			val.SetString(string(data))
 		case "dateTime.iso8601":
+			if _, ok := val.Interface().(time.Time); !ok {
+				return TypeMismatchError(fmt.Sprintf("error: type mismatch error - can't decode %v to time", val.Kind()))
+			}
+
 			t, err := time.Parse(iso8601, string(data))
 			if err != nil {
 				return err
@@ -219,6 +248,10 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 
 			val.Set(reflect.ValueOf(t))
 		case "boolean":
+			if err = checkType(val, reflect.Bool); err != nil {
+				return err
+			}
+
 			v, err := strconv.ParseBool(string(data))
 			if err != nil {
 				return err
@@ -226,6 +259,10 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 
 			val.SetBool(v)
 		case "double":
+			if err = checkType(val, reflect.Float32, reflect.Float64); err != nil {
+				return err
+			}
+
 			i, err := strconv.ParseFloat(string(data), val.Type().Bits())
 			if err != nil {
 				return err
@@ -282,4 +319,30 @@ func (dec *decoder) readCharData() ([]byte, error) {
 	} else {
 		return nil, invalidXmlError
 	}
+}
+
+func checkType(val reflect.Value, kinds ...reflect.Kind) error {
+	if len(kinds) == 0 {
+		return nil
+	}
+
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	match := false
+
+	for _, kind := range kinds {
+		if val.Kind() == kind {
+			match = true
+			break
+		}
+	}
+
+	if !match {
+		return TypeMismatchError(fmt.Sprintf("error: type mismatch - can't unmarshal %v to %v",
+			val.Kind(), kinds[0]))
+	}
+
+	return nil
 }
