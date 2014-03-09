@@ -230,7 +230,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			}
 
 			val.SetInt(i)
-		case "string":
+		case "string", "base64":
 			if err = checkType(val, reflect.String); err != nil {
 				return err
 			}

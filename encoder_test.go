@@ -12,6 +12,7 @@ var marshalTests = []struct {
 	{100, "<value><int>100</int></value>"},
 	{"Once upon a time", "<value><string>Once upon a time</string></value>"},
 	{"Mike & Mick <London, UK>", "<value><string>Mike &amp; Mick &lt;London, UK&gt;</string></value>"},
+	{Base64("T25jZSB1cG9uIGEgdGltZQ=="), "<value><base64>T25jZSB1cG9uIGEgdGltZQ==</base64></value>"},
 	{true, "<value><boolean>1</boolean></value>"},
 	{false, "<value><boolean>0</boolean></value>"},
 	{12.134, "<value><double>12.134</double></value>"},

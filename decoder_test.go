@@ -20,6 +20,7 @@ var unmarshalTests = []struct {
 	{"Once upon a time", new(*string), "<value><string>Once upon a time</string></value>"},
 	{"Mike & Mick <London, UK>", new(*string), "<value><string>Mike &amp; Mick &lt;London, UK&gt;</string></value>"},
 	{"Once upon a time", new(*string), "<value>Once upon a time</value>"},
+	{"T25jZSB1cG9uIGEgdGltZQ==", new(*string), "<value><base64>T25jZSB1cG9uIGEgdGltZQ==</base64></value>"},
 	{true, new(*bool), "<value><boolean>1</boolean></value>"},
 	{false, new(*bool), "<value><boolean>0</boolean></value>"},
 	{12.134, new(*float32), "<value><double>12.134</double></value>"},

@@ -58,8 +58,14 @@ func encodeValue(val reflect.Value) ([]byte, error) {
 		}
 	case reflect.String:
 		var buf bytes.Buffer
+
 		xml.Escape(&buf, []byte(val.String()))
-		b = []byte(fmt.Sprintf("<string>%s</string>", buf.String()))
+
+		if _, ok := val.Interface().(Base64); ok {
+			b = []byte(fmt.Sprintf("<base64>%s</base64>", buf.String()))
+		} else {
+			b = []byte(fmt.Sprintf("<string>%s</string>", buf.String()))
+		}
 	default:
 		return nil, fmt.Errorf("xmlrpc encode error: unsupported type")
 	}

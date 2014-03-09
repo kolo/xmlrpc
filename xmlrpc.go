@@ -14,3 +14,6 @@ type xmlrpcError struct {
 func (e *xmlrpcError) Error() string {
 	return fmt.Sprintf("Error: \"%s\" Code: %d", e.err, e.code)
 }
+
+// Base64 represents value in base64 encoding
+type Base64 string
