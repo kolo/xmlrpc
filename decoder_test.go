@@ -12,20 +12,21 @@ type book struct {
 }
 
 var unmarshalTests = []struct {
-	value  interface{}
-	xml    string
+	value interface{}
+	ptr   interface{}
+	xml   string
 }{
-	{100, "<value><int>100</int></value>"},
-	{"Once upon a time", "<value><string>Once upon a time</string></value>"},
-	{"Mike & Mick <London, UK>", "<value><string>Mike &amp; Mick &lt;London, UK&gt;</string></value>"},
-	{"Once upon a time", "<value>Once upon a time</value>"},
-	{true, "<value><boolean>1</boolean></value>"},
-	{false, "<value><boolean>0</boolean></value>"},
-	{12.134, "<value><double>12.134</double></value>"},
-	{-12.134, "<value><double>-12.134</double></value>"},
-	{time.Unix(1386622812, 0).UTC(), "<value><dateTime.iso8601>20131209T21:00:12</dateTime.iso8601></value>"},
-	{[]int{1, 5, 7}, "<value><array><data><value><int>1</int></value><value><int>5</int></value><value><int>7</int></value></data></array></value>"},
-	{book{"War and Piece", 20}, "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
+	{100, new(*int), "<value><int>100</int></value>"},
+	{"Once upon a time", new(*string), "<value><string>Once upon a time</string></value>"},
+	{"Mike & Mick <London, UK>", new(*string), "<value><string>Mike &amp; Mick &lt;London, UK&gt;</string></value>"},
+	{"Once upon a time", new(*string), "<value>Once upon a time</value>"},
+	{true, new(*bool), "<value><boolean>1</boolean></value>"},
+	{false, new(*bool), "<value><boolean>0</boolean></value>"},
+	{12.134, new(*float32), "<value><double>12.134</double></value>"},
+	{-12.134, new(*float32), "<value><double>-12.134</double></value>"},
+	{time.Unix(1386622812, 0).UTC(), new(*time.Time), "<value><dateTime.iso8601>20131209T21:00:12</dateTime.iso8601></value>"},
+	{[]int{1, 5, 7}, new(*[]int), "<value><array><data><value><int>1</int></value><value><int>5</int></value><value><int>7</int></value></data></array></value>"},
+	{book{"War and Piece", 20}, new(*book), "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
 }
 
 func Test_unmarshal(t *testing.T) {
@@ -51,6 +52,14 @@ func Test_unmarshal(t *testing.T) {
 			if v.Interface() != interface{}(tt.value) {
 				t.Fatalf("unmarshal error:\nexpected: %v\n     got: %v", tt.value, v.Interface())
 			}
+		}
+	}
+}
+
+func Test_unmarshalToNil(t *testing.T) {
+	for _, tt := range unmarshalTests {
+		if err := unmarshal([]byte(tt.xml), tt.ptr); err != nil {
+			t.Fatalf("unmarshal error: %v", err)
 		}
 	}
 }

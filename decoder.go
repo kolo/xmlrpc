@@ -64,6 +64,13 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 	var tok xml.Token
 	var err error
 
+	if val.Kind() == reflect.Ptr {
+		if val.IsNil() {
+			val.Set(reflect.New(val.Type().Elem()))
+		}
+		val = val.Elem()
+	}
+
 	var typeName string
 	for {
 		if tok, err = dec.Token(); err != nil {
@@ -209,13 +216,6 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 		data, err := dec.readCharData()
 		if err != nil {
 			return err
-		}
-
-		if val.Kind() == reflect.Ptr {
-			if val.IsNil() {
-				val.Set(reflect.New(val.Type().Elem()))
-			}
-			val = val.Elem()
 		}
 
 		switch typeName {
