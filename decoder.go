@@ -106,10 +106,14 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 		valType := val.Type()
 		for i := 0; i < valType.NumField(); i++ {
 			field := valType.Field(i)
-			if fn := field.Tag.Get("xmlrpc"); fn != "" {
-				fields[fn] = val.FieldByName(field.Name)
-			} else {
-				fields[field.Name] = val.FieldByName(field.Name)
+			fieldVal := val.FieldByName(field.Name)
+
+			if fieldVal.CanSet() {
+				if fn := field.Tag.Get("xmlrpc"); fn != "" {
+					fields[fn] = fieldVal
+				} else {
+					fields[field.Name] = fieldVal
+				}
 			}
 		}
 
