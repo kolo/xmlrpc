@@ -113,7 +113,7 @@ func (codec *clientCodec) Close() error {
 // NewClient returns instance of rpc.Client object, that is used to send request to xmlrpc service.
 func NewClient(url string, transport http.RoundTripper) (*Client, error) {
 	if transport == nil {
-		transport = &http.Transport{}
+		transport = http.DefaultTransport
 	}
 
 	httpClient := &http.Client{Transport: transport}
