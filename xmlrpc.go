@@ -4,21 +4,16 @@ import (
 	"fmt"
 )
 
-// Struct presents hash type used in xmlprc requests and responses.
-type Struct map[string]interface{}
-
-// Params represents a list of parameters to a method.
-type Params struct {
-	Params []interface{}
-}
-
 // xmlrpcError represents errors returned on xmlrpc request.
 type xmlrpcError struct {
-	code    string
-	message string
+	code int
+	err  string
 }
 
 // Error() method implements Error interface
 func (e *xmlrpcError) Error() string {
-	return fmt.Sprintf("Error: \"%s\" Code: %s", e.message, e.code)
+	return fmt.Sprintf("error: \"%s\" code: %d", e.err, e.code)
 }
+
+// Base64 represents value in base64 encoding
+type Base64 string

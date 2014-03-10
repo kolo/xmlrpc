@@ -1,47 +1,52 @@
 package xmlrpc
 
 import (
-	"fmt"
 	"regexp"
 )
 
-// responseFailed checks whether response failed or not. Response defined as failed if it
-// contains <fault>...</fault> section.
-func responseFailed(response []byte) (bool, error) {
-	fault := true
-	faultRegexp, err := regexp.Compile(`<fault>(\s|\S)+</fault>`)
+var (
+	faultRx = regexp.MustCompile(`<fault>(\s|\S)+</fault>`)
+)
 
-	if err == nil {
-		fault = faultRegexp.Match(response)
+type failedResponse struct {
+	Code  int    `xmlrpc:"faultCode"`
+	Error string `xmlrpc:"faultString"`
+}
+
+func (r *failedResponse) err() error {
+	return &xmlrpcError{
+		code: r.Code,
+		err:  r.Error,
 	}
-
-	return fault, err
 }
 
-func parseSuccessfulResponse(response []byte) (interface{}, error) {
-	valueXml := getValueXml(response)
-	return parseValue(valueXml)
+type Response struct {
+	data []byte
 }
 
-func parseFailedResponse(response []byte) (err error) {
-	var valueXml []byte
-	valueXml = getValueXml(response)
+func NewResponse(data []byte) *Response {
+	return &Response{
+		data: data,
+	}
+}
 
-	value, err := parseValue(valueXml)
-	faultDetails := value.(Struct)
+func (r *Response) Failed() bool {
+	return faultRx.Match(r.data)
+}
 
-	if err != nil {
+func (r *Response) Err() error {
+	failedResp := new(failedResponse)
+	if err := unmarshal(r.data, failedResp); err != nil {
 		return err
 	}
 
-	return &(xmlrpcError{
-		code:    fmt.Sprintf("%v", faultDetails["faultCode"]),
-		message: faultDetails["faultString"].(string),
-	})
+	return failedResp.err()
 }
 
-func getValueXml(rawXml []byte) []byte {
-	expr, _ := regexp.Compile(`<value>(\s|\S)+</value>`)
-	return expr.Find(rawXml)
+func (r *Response) Unmarshal(v interface{}) error {
+	if err := unmarshal(r.data, v); err != nil {
+		return err
+	}
 
+	return nil
 }

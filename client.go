@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/rpc"
-	"reflect"
 )
 
 type Client struct {
@@ -27,15 +26,14 @@ type clientCodec struct {
 	// rpc.Client can mark them as done.
 	responses map[uint64]*http.Response
 
-	// responseBody holds response body of last request.
-	responseBody []byte
+	response *Response
 
 	// ready presents channel, that is used to link request and it`s response.
 	ready chan uint64
 }
 
-func (codec *clientCodec) WriteRequest(request *rpc.Request, params interface{}) (err error) {
-	httpRequest, err := newRequest(codec.url, request.ServiceMethod, params)
+func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (err error) {
+	httpRequest, err := NewRequest(codec.url, request.ServiceMethod, args)
 
 	if codec.cookies != nil {
 		for _, cookie := range codec.cookies {
@@ -68,7 +66,11 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	seq := <-codec.ready
 	httpResponse := codec.responses[seq]
 
-	codec.responseBody, err = ioutil.ReadAll(httpResponse.Body)
+	if httpResponse.StatusCode != http.StatusOK {
+		return fmt.Errorf("request error: bad status code - %d", httpResponse.StatusCode)
+	}
+
+	respData, err := ioutil.ReadAll(httpResponse.Body)
 
 	if err != nil {
 		return err
@@ -76,9 +78,13 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 
 	httpResponse.Body.Close()
 
-	if fault, _ := responseFailed(codec.responseBody); fault {
-		response.Error = fmt.Sprintf("%v", parseFailedResponse(codec.responseBody))
+	resp := NewResponse(respData)
+
+	if resp.Failed() {
+		response.Error = fmt.Sprintf("%v", resp.Err())
 	}
+
+	codec.response = resp
 
 	response.Seq = seq
 	delete(codec.responses, seq)
@@ -86,25 +92,14 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	return nil
 }
 
-func (codec *clientCodec) ReadResponseBody(x interface{}) (err error) {
-	if (x == nil) {
+func (codec *clientCodec) ReadResponseBody(v interface{}) (err error) {
+	if (v == nil) {
 		return nil
 	}
 
-	var result interface{}
-	result, err = parseSuccessfulResponse(codec.responseBody)
-
-	if err != nil {
+	if err = codec.response.Unmarshal(v); err != nil {
 		return err
 	}
-
-	v := reflect.ValueOf(x)
-
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	v.Set(reflect.ValueOf(result))
 
 	return nil
 }
@@ -116,9 +111,9 @@ func (codec *clientCodec) Close() error {
 }
 
 // NewClient returns instance of rpc.Client object, that is used to send request to xmlrpc service.
-func NewClient(url string, transport *http.Transport) (*Client, error) {
+func NewClient(url string, transport http.RoundTripper) (*Client, error) {
 	if transport == nil {
-		transport = &http.Transport{}
+		transport = http.DefaultTransport
 	}
 
 	httpClient := &http.Client{Transport: transport}
