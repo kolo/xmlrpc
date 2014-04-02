@@ -34,7 +34,7 @@ func Test_failedResponse(t *testing.T) {
 		t.Fatal("Failed() error: expected true, got false")
 	}
 
-	if resp.Err == nil {
+	if resp.Err() == nil {
 		t.Fatal("Err() error: expected error, got nil")
 	}
 
