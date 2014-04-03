@@ -85,3 +85,11 @@ func Test_typeMismatchError(t *testing.T) {
 		}
 	}
 }
+
+func Test_unmarshalEmptyValue(t *testing.T) {
+	var v int
+
+	if err := unmarshal([]byte("<value/>"), &v); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+}

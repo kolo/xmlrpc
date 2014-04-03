@@ -23,6 +23,9 @@ var marshalTests = []struct {
 		Title  string
 		Amount int
 	}{"War and Piece", 20}, "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
+	{&struct{
+		Value interface{} `xmlrpc:"value"`
+	}{}, "<value><struct><member><name>value</name><value/></member></struct></value>"},
 }
 
 func Test_marshal(t *testing.T) {

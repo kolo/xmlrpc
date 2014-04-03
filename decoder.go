@@ -77,6 +77,14 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			return err
 		}
 
+		if t, ok := tok.(xml.EndElement); ok {
+			if t.Name.Local == "value" {
+				return nil
+			} else {
+				return invalidXmlError
+			}
+		}
+
 		if t, ok := tok.(xml.StartElement); ok {
 			typeName = t.Name.Local
 			break

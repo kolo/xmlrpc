@@ -43,3 +43,42 @@ func Test_failedResponse(t *testing.T) {
 		t.Fatal("Err() error: got wrong error")
 	}
 }
+
+const emptyValResp = `
+<?xml version="1.0" encoding="UTF-8"?>
+<methodResponse>
+	<params>
+		<param>
+			<value>
+				<struct>
+					<member>
+						<name>user</name>
+						<value><string>Joe Smith</string></value>
+					</member>
+					<member>
+						<name>token</name>
+						<value/>
+					</member>
+				</struct>
+			</value>
+		</param>
+	</params>
+</methodResponse>`
+
+
+func Test_responseWithEmptyValue(t *testing.T) {
+	resp := NewResponse([]byte(emptyValResp))
+
+	result := struct{
+		User string `xmlrpc:"user"`
+		Token string `xmlrpc:"token"`
+	}{}
+
+	if err := resp.Unmarshal(&result); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+
+	if result.User != "Joe Smith" || result.Token != "" {
+		t.Fatalf("unexpected result: %v", result)
+	}
+}
