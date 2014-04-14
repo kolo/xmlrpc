@@ -225,10 +225,22 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			}
 		}
 	default:
-		data, err := dec.readCharData()
-		if err != nil {
+		if tok, err = dec.Token(); err != nil {
 			return err
 		}
+
+		// check for empty value
+		if _, ok := tok.(xml.EndElement); ok {
+			return nil
+		}
+
+		t, ok := tok.(xml.CharData)
+
+		if !ok {
+			return invalidXmlError
+		}
+
+		data := []byte(t.Copy())
 
 		switch typeName {
 		case "int", "i4":
