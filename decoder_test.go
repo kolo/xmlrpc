@@ -34,6 +34,7 @@ var unmarshalTests = []struct {
 	{[]int{1, 5, 7}, new(*[]int), "<value><array><data><value><int>1</int></value><value><int>5</int></value><value><int>7</int></value></data></array></value>"},
 	{book{"War and Piece", 20}, new(*book), "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
 	{bookUnexported{}, new(*bookUnexported), "<value><struct><member><name>title</name><value><string>War and Piece</string></value></member><member><name>amount</name><value><int>20</int></value></member></struct></value>"},
+	{0, new(*int), "<value><int></int></value>"},
 }
 
 func Test_unmarshal(t *testing.T) {
@@ -72,21 +73,21 @@ func Test_unmarshalToNil(t *testing.T) {
 }
 
 func Test_typeMismatchError(t *testing.T) {
-	var r uint
+	var s string
 
-	for _, tt := range unmarshalTests {
-		var err error
-		if err = unmarshal([]byte(tt.xml), &r); err == nil {
-			t.Fatal("unmarshal error: expected error, but didn't get it")
-		}
+	tt := unmarshalTests[0]
+	var err error
 
-		if _, ok := err.(TypeMismatchError); !ok {
-			t.Fatal("unmarshal error: expected type mistmatch error, but didn't get it")
-		}
+	if err = unmarshal([]byte(tt.xml), &s); err == nil {
+		t.Fatal("unmarshal error: expected error, but didn't get it")
+	}
+
+	if _, ok := err.(TypeMismatchError); !ok {
+		t.Fatal("unmarshal error: expected type mistmatch error, but didn't get it")
 	}
 }
 
-func Test_unmarshalEmptyValue(t *testing.T) {
+func Test_unmarshalEmptyValueTag(t *testing.T) {
 	var v int
 
 	if err := unmarshal([]byte("<value/>"), &v); err != nil {
