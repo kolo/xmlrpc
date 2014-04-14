@@ -225,9 +225,19 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			}
 		}
 	default:
-		data, err := dec.readCharData()
-		if err != nil {
+		if tok, err = dec.Token(); err != nil {
 			return err
+		}
+
+		var data []byte
+
+		switch t := tok.(type) {
+		case xml.EndElement:
+			return nil
+		case xml.CharData:
+			data = []byte(t.Copy())
+		default:
+			return invalidXmlError
 		}
 
 		switch typeName {
