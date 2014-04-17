@@ -41,6 +41,8 @@ func encodeValue(val reflect.Value) ([]byte, error) {
 		default:
 			b, err = encodeStruct(val)
 		}
+	case reflect.Map:
+		b, err = encodeMap(val)
 	case reflect.Slice:
 		b, err = encodeSlice(val)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -99,6 +101,41 @@ func encodeStruct(val reflect.Value) ([]byte, error) {
 		}
 		b.Write(p)
 
+		b.WriteString("</member>")
+	}
+
+	b.WriteString("</struct>")
+
+	return b.Bytes(), nil
+}
+
+func encodeMap(val reflect.Value) ([]byte, error) {
+	var t = val.Type()
+
+	if t.Key().Kind() != reflect.String {
+		return nil, fmt.Errorf("xmlrpc encode error: only maps with string keys are supported")
+	}
+
+	var b bytes.Buffer
+
+	b.WriteString("<struct>")
+
+	keys := val.MapKeys()
+
+	for i := 0; i < val.Len(); i++ {
+		key := keys[i]
+		kval := val.MapIndex(key)
+
+		b.WriteString("<member>")
+		b.WriteString(fmt.Sprintf("<name>%s</name>", key.String()))
+
+		p, err := encodeValue(kval)
+
+		if err != nil {
+			return nil, err
+		}
+
+		b.Write(p)
 		b.WriteString("</member>")
 	}
 
