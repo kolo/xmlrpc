@@ -105,24 +105,40 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 
 	switch typeName {
 	case "struct":
+		ismap := false
+		valType := val.Type()
+
 		if err = checkType(val, reflect.Struct); err != nil {
-			return err
+			if checkType(val, reflect.Map) == nil {
+				if valType.Key().Kind() != reflect.String {
+					return fmt.Errorf("only maps with string key type can be unmarshalled")
+				}
+				ismap = true
+			} else {
+				return err
+			}
 		}
 
-		fields := make(map[string]reflect.Value)
+		var fields map[string]reflect.Value
 
-		valType := val.Type()
-		for i := 0; i < valType.NumField(); i++ {
-			field := valType.Field(i)
-			fieldVal := val.FieldByName(field.Name)
+		if !ismap {
+			fields = make(map[string]reflect.Value)
 
-			if fieldVal.CanSet() {
-				if fn := field.Tag.Get("xmlrpc"); fn != "" {
-					fields[fn] = fieldVal
-				} else {
-					fields[field.Name] = fieldVal
+			for i := 0; i < valType.NumField(); i++ {
+				field := valType.Field(i)
+				fieldVal := val.FieldByName(field.Name)
+
+				if fieldVal.CanSet() {
+					if fn := field.Tag.Get("xmlrpc"); fn != "" {
+						fields[fn] = fieldVal
+					} else {
+						fields[field.Name] = fieldVal
+					}
 				}
 			}
+		} else {
+			// Create initial empty map
+			val.Set(reflect.MakeMap(valType))
 		}
 
 		// Process struct members.
@@ -145,7 +161,16 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 					return invalidXmlError
 				}
 
-				if fv, ok := fields[string(fieldName)]; ok {
+				var fv reflect.Value
+				ok := true
+
+				if !ismap {
+					fv, ok = fields[string(fieldName)]
+				} else {
+					fv = reflect.New(valType.Elem())
+				}
+
+				if ok {
 					for {
 						if tok, err = dec.Token(); err != nil {
 							return err
@@ -168,6 +193,10 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 				// </member>
 				if err = dec.Skip(); err != nil {
 					return err
+				}
+
+				if ismap {
+					val.SetMapIndex(reflect.ValueOf(string(fieldName)), reflect.Indirect(fv))
 				}
 			case xml.EndElement:
 				break StructLoop
