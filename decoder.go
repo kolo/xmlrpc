@@ -259,7 +259,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 		}
 
 		var data []byte
-
+		isInterface := val.Kind() == reflect.Interface
 		switch t := tok.(type) {
 		case xml.EndElement:
 			return nil
@@ -270,23 +270,32 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 		}
 
 		switch typeName {
-		case "int", "i4":
-			if err = checkType(val, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64); err != nil {
-				return err
+		case "int", "i4", "i8":
+			var bits int
+			if val.Kind() == reflect.Interface {
+				bits = 64
+			} else {
+				bits = val.Type().Bits()
 			}
 
-			i, err := strconv.ParseInt(string(data), 10, val.Type().Bits())
+			i, err := strconv.ParseInt(string(data), 10, bits)
 			if err != nil {
 				return err
 			}
-
-			val.SetInt(i)
+			if val.Kind() == reflect.Interface {
+				val.Set(reflect.ValueOf(i))
+			} else {
+				val.SetInt(i)
+			}
 		case "string", "base64":
 			if err = checkType(val, reflect.String); err != nil {
 				return err
 			}
-
-			val.SetString(string(data))
+			if val.Kind() == reflect.Interface {
+				val.Set(reflect.ValueOf(string(data)))
+			} else {
+				val.SetString(string(data))
+			}
 		case "dateTime.iso8601":
 			if _, ok := val.Interface().(time.Time); !ok {
 				return TypeMismatchError(fmt.Sprintf("error: type mismatch error - can't decode %v to time", val.Kind()))
@@ -307,19 +316,30 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			if err != nil {
 				return err
 			}
-
-			val.SetBool(v)
+			if isInterface {
+				val.Set(reflect.ValueOf(v))
+			} else {
+				val.SetBool(v)
+			}
 		case "double":
 			if err = checkType(val, reflect.Float32, reflect.Float64); err != nil {
 				return err
 			}
-
-			i, err := strconv.ParseFloat(string(data), val.Type().Bits())
+			var bits int
+			if val.Kind() == reflect.Interface {
+				bits = 64
+			} else {
+				bits = val.Type().Bits()
+			}
+			i, err := strconv.ParseFloat(string(data), bits)
 			if err != nil {
 				return err
 			}
-
-			val.SetFloat(i)
+			if val.Kind() == reflect.Interface {
+				val.Set(reflect.ValueOf(i))
+			} else {
+				val.SetFloat(i)
+			}
 		default:
 			return errors.New("unsupported type")
 		}
@@ -388,6 +408,10 @@ func checkType(val reflect.Value, kinds ...reflect.Kind) error {
 			match = true
 			break
 		}
+	}
+
+	if val.Kind() == reflect.Interface {
+		match = true
 	}
 
 	if !match {
