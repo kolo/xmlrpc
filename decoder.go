@@ -274,7 +274,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 				return err
 			}
 			var bits int
-			if val.Kind() == reflect.Interface {
+			if isInterface {
 				bits = 64
 			} else {
 				bits = val.Type().Bits()
@@ -284,7 +284,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			if err != nil {
 				return err
 			}
-			if val.Kind() == reflect.Interface {
+			if isInterface {
 				val.Set(reflect.ValueOf(i))
 			} else {
 				val.SetInt(i)
@@ -293,7 +293,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			if err = checkType(val, reflect.String); err != nil {
 				return err
 			}
-			if val.Kind() == reflect.Interface {
+			if isInterface {
 				val.Set(reflect.ValueOf(string(data)))
 			} else {
 				val.SetString(string(data))
@@ -328,7 +328,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 				return err
 			}
 			var bits int
-			if val.Kind() == reflect.Interface {
+			if isInterface {
 				bits = 64
 			} else {
 				bits = val.Type().Bits()
@@ -337,7 +337,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			if err != nil {
 				return err
 			}
-			if val.Kind() == reflect.Interface {
+			if isInterface {
 				val.Set(reflect.ValueOf(i))
 			} else {
 				val.SetFloat(i)
