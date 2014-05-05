@@ -268,9 +268,11 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 		default:
 			return invalidXmlError
 		}
-
 		switch typeName {
 		case "int", "i4", "i8":
+			if err = checkType(val, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int); err != nil {
+				return err
+			}
 			var bits int
 			if val.Kind() == reflect.Interface {
 				bits = 64
