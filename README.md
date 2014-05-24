@@ -13,7 +13,7 @@ statement.
     client, _ := xmlrpc.NewClient("https://bugzilla.mozilla.org/xmlrpc.cgi", nil)
     result := struct{
       Version string `xmlrpc:"version"`
-    }
+    }{}
     client.Call("Bugzilla.version", nil, &result)
     fmt.Printf("Version: %s\n", result.Version) // Version: 4.2.7+
 
