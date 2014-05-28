@@ -7,8 +7,28 @@ import (
 	"net/rpc"
 )
 
+const (
+	SystemMulticall = "system.multicall"
+)
+
 type Client struct {
 	*rpc.Client
+}
+
+type Call struct {
+	ServiceMethod string        `xmlrpc:"methodName"`
+	Args          []interface{} `xmlrpc:"params"`
+	Reply         interface{}   `xmlrpc-skip:"true"`
+	Error         error         `xmlrpc-skip:"true"`
+}
+
+type pendingRequest struct {
+	serviceMethod string
+	httpResponse  *http.Response
+}
+
+func (client *Client) Multicall(calls []Call) error {
+	return client.Call(SystemMulticall, calls, calls)
 }
 
 // clientCodec is rpc.ClientCodec interface implementation.
@@ -22,9 +42,9 @@ type clientCodec struct {
 	// cookies stores cookies received on last request
 	cookies []*http.Cookie
 
-	// responses presents map of active requests. It is required to return request id, that
+	// pending presents map of active requests. It is required to return request id, that
 	// rpc.Client can mark them as done.
-	responses map[uint64]*http.Response
+	pending map[uint64]*pendingRequest
 
 	response *Response
 
@@ -56,7 +76,7 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 		codec.cookies = httpResponse.Cookies()
 	}
 
-	codec.responses[request.Seq] = httpResponse
+	codec.pending[request.Seq] = &pendingRequest{request.ServiceMethod, httpResponse}
 	codec.ready <- request.Seq
 
 	return nil
@@ -64,21 +84,24 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 
 func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error) {
 	seq := <-codec.ready
-	httpResponse := codec.responses[seq]
+	req := codec.pending[seq]
 
-	if httpResponse.StatusCode != http.StatusOK {
-		return fmt.Errorf("request error: bad status code - %d", httpResponse.StatusCode)
+	response.Seq = seq
+	response.ServiceMethod = req.serviceMethod
+
+	if req.httpResponse.StatusCode != http.StatusOK {
+		return fmt.Errorf("request error: bad status code - %d", req.httpResponse.StatusCode)
 	}
 
-	respData, err := ioutil.ReadAll(httpResponse.Body)
+	respData, err := ioutil.ReadAll(req.httpResponse.Body)
 
 	if err != nil {
 		return err
 	}
 
-	httpResponse.Body.Close()
+	req.httpResponse.Body.Close()
 
-	resp := NewResponse(respData)
+	resp := NewResponse(respData, req.serviceMethod == SystemMulticall)
 
 	if resp.Failed() {
 		response.Error = fmt.Sprintf("%v", resp.Err())
@@ -87,16 +110,17 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	codec.response = resp
 
 	response.Seq = seq
-	delete(codec.responses, seq)
+	delete(codec.pending, seq)
 
 	return nil
 }
 
 func (codec *clientCodec) ReadResponseBody(v interface{}) (err error) {
-	if (v == nil) {
+	if v == nil {
 		return nil
 	}
 
+	fmt.Println(codec.response.multicall)
 	if err = codec.response.Unmarshal(v); err != nil {
 		return err
 	}
@@ -122,7 +146,7 @@ func NewClient(url string, transport http.RoundTripper) (*Client, error) {
 		url:        url,
 		httpClient: httpClient,
 		ready:      make(chan uint64),
-		responses:  make(map[uint64]*http.Response),
+		pending:    make(map[uint64]*pendingRequest),
 	}
 
 	return &Client{rpc.NewClientWithCodec(&codec)}, nil

@@ -22,4 +22,5 @@ end
 
 server = XMLRPC::Server.new 5001, 'localhost'
 server.add_handler "service", Service.new
+server.add_multicall
 server.serve

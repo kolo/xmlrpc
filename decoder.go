@@ -60,6 +60,16 @@ func unmarshal(data []byte, v interface{}) (err error) {
 	return nil
 }
 
+func unmarshalMulticall(data []byte, v interface{}) (err error) {
+	if calls, ok := v.([]Call); ok {
+		fmt.Println(calls)
+		fmt.Println(string(data))
+		return nil
+	} else {
+		return fmt.Errorf("multicall accepts only array of Call structs")
+	}
+}
+
 func (dec *decoder) decodeValue(val reflect.Value) error {
 	var tok xml.Token
 	var err error

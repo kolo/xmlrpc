@@ -86,22 +86,26 @@ func encodeStruct(val reflect.Value) ([]byte, error) {
 
 	t := val.Type()
 	for i := 0; i < t.NumField(); i++ {
-		b.WriteString("<member>")
 		f := t.Field(i)
 
-		name := f.Tag.Get("xmlrpc")
-		if name == "" {
-			name = f.Name
-		}
-		b.WriteString(fmt.Sprintf("<name>%s</name>", name))
+		skip := f.Tag.Get("skip")
+		if skip == "" || skip == "false" {
+			b.WriteString("<member>")
 
-		p, err := encodeValue(val.FieldByName(f.Name))
-		if err != nil {
-			return nil, err
-		}
-		b.Write(p)
+			name := f.Tag.Get("xmlrpc")
+			if name == "" {
+				name = f.Name
+			}
+			b.WriteString(fmt.Sprintf("<name>%s</name>", name))
 
-		b.WriteString("</member>")
+			p, err := encodeValue(val.FieldByName(f.Name))
+			if err != nil {
+				return nil, err
+			}
+			b.Write(p)
+
+			b.WriteString("</member>")
+		}
 	}
 
 	b.WriteString("</struct>")

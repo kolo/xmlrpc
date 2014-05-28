@@ -28,7 +28,7 @@ const faultRespXml = `
 </methodResponse>`
 
 func Test_failedResponse(t *testing.T) {
-	resp := NewResponse([]byte(faultRespXml))
+	resp := NewResponse([]byte(faultRespXml), false)
 
 	if !resp.Failed() {
 		t.Fatal("Failed() error: expected true, got false")
@@ -67,7 +67,7 @@ const emptyValResp = `
 
 
 func Test_responseWithEmptyValue(t *testing.T) {
-	resp := NewResponse([]byte(emptyValResp))
+	resp := NewResponse([]byte(emptyValResp), false)
 
 	result := struct{
 		User string `xmlrpc:"user"`

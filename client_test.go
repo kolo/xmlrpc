@@ -69,6 +69,20 @@ func Test_FailedCall(t *testing.T) {
 	}
 }
 
+func Test_MultiCall(t *testing.T) {
+	client := newClient(t)
+	defer client.Close()
+
+	calls := []Call{
+		{"service.sum", []interface{}{3,5}, 0, nil},
+		{"service.sum", []interface{}{3,5}, 0, nil},
+		{"service.upcase", []interface{}{"xmlrpc"}, "", nil},
+	}
+	if err := client.Multicall(calls); err != nil {
+		t.Fatal("multicall error: %v", err)
+	}
+}
+
 func newClient(t *testing.T) *Client {
 	client, err := NewClient("http://localhost:5001", nil)
 	if err != nil {

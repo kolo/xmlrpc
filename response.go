@@ -21,12 +21,14 @@ func (r *failedResponse) err() error {
 }
 
 type Response struct {
-	data []byte
+	data      []byte
+	multicall bool
 }
 
-func NewResponse(data []byte) *Response {
+func NewResponse(data []byte, multicall bool) *Response {
 	return &Response{
-		data: data,
+		data:      data,
+		multicall: multicall,
 	}
 }
 
@@ -44,8 +46,14 @@ func (r *Response) Err() error {
 }
 
 func (r *Response) Unmarshal(v interface{}) error {
-	if err := unmarshal(r.data, v); err != nil {
-		return err
+	if r.multicall {
+		if err := unmarshalMulticall(r.data, v); err != nil {
+			return err
+		}
+	} else {
+		if err := unmarshal(r.data, v); err != nil {
+			return err
+		}
 	}
 
 	return nil
