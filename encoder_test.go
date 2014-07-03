@@ -23,12 +23,20 @@ var marshalTests = []struct {
 		Title  string
 		Amount int
 	}{"War and Piece", 20}, "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
-	{&struct{
+	{&struct {
 		Value interface{} `xmlrpc:"value"`
 	}{}, "<value><struct><member><name>value</name><value/></member></struct></value>"},
 	{
 		map[string]interface{}{"title": "War and Piece", "amount": 20},
 		"<value><struct><member><name>title</name><value><string>War and Piece</string></value></member><member><name>amount</name><value><int>20</int></value></member></struct></value>",
+	},
+	{
+		map[string]interface{}{
+			"Name":  "John Smith",
+			"Age":   6,
+			"Wight": []float32{66.67, 100.5},
+			"Dates": map[string]interface{}{"Birth": time.Date(1829, time.November, 10, 23, 0, 0, 0, time.UTC), "Death": time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)}},
+		"<value><struct><member><name>Name</name><value><string>John Smith</string></value></member><member><name>Age</name><value><int>6</int></value></member><member><name>Wight</name><value><array><data><value><double>66.67</double></value><value><double>100.5</double></value></data></array></value></member><member><name>Dates</name><value><struct><member><name>Birth</name><value><dateTime.iso8601>18291110T23:00:00</dateTime.iso8601></value></member><member><name>Death</name><value><dateTime.iso8601>20091110T23:00:00</dateTime.iso8601></value></member></struct></value></member></struct></value>",
 	},
 }
 

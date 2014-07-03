@@ -35,6 +35,12 @@ var unmarshalTests = []struct {
 	{book{"War and Piece", 20}, new(*book), "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
 	{bookUnexported{}, new(*bookUnexported), "<value><struct><member><name>title</name><value><string>War and Piece</string></value></member><member><name>amount</name><value><int>20</int></value></member></struct></value>"},
 	{0, new(*int), "<value><int></int></value>"},
+	{[]interface{}{"A", "5"}, new(interface{}), "<value><array><data><value><string>A</string></value><value><string>5</string></value></data></array></value>"},
+	//{map[string]interface{}{"Name": "John Smith",
+	//	"Age":   6,
+	//	"Wight": []interface{}{66.67, 100.5}},
+	//	new(interface{}), "<value><struct><member><name>Name</name><value><string>John Smith</string></value></member><member><name>Age</name><value><int>6</int></value></member><member><name>Wight</name><value><array><data><value><double>66.67</double></value><value><double>100.5</double></value></data></array></value></member></struct></value>"},
+	{map[string]interface{}{"Name": "John Smith"}, new(interface{}), "<value><struct><member><name>Name</name><value><string>John Smith</string></value></member></struct></value>"},
 }
 
 func Test_unmarshal(t *testing.T) {
@@ -57,7 +63,10 @@ func Test_unmarshal(t *testing.T) {
 				}
 			}
 		} else {
-			if v.Interface() != interface{}(tt.value) {
+			a1 := v.Interface()
+			a2 := interface{}(tt.value)
+
+			if !reflect.DeepEqual(a1, a2) {
 				t.Fatalf("unmarshal error:\nexpected: %v\n     got: %v", tt.value, v.Interface())
 			}
 		}
