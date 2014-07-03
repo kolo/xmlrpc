@@ -1,8 +1,8 @@
 package xmlrpc
 
 import (
-	"time"
 	"testing"
+	"time"
 )
 
 func Test_CallWithoutArgs(t *testing.T) {
@@ -34,8 +34,8 @@ func Test_CallWithTwoArgs(t *testing.T) {
 	defer client.Close()
 
 	var sum int
-	if err := client.Call("service.sum", []interface{}{2,3}, &sum); err != nil {
-		t.Fatalf("service.upcase call error: %v", err)
+	if err := client.Call("service.sum", []interface{}{2, 3}, &sum); err != nil {
+		t.Fatalf("service.sum call error: %v", err)
 	}
 
 	if sum != 5 {
@@ -53,8 +53,8 @@ func Test_TwoCalls(t *testing.T) {
 	}
 
 	var sum int
-	if err := client.Call("service.sum", []interface{}{2,3}, &sum); err != nil {
-		t.Fatalf("service.upcase call error: %v", err)
+	if err := client.Call("service.sum", []interface{}{2, 3}, &sum); err != nil {
+		t.Fatalf("service.sum call error: %v", err)
 	}
 
 }
