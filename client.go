@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/cookiejar"
 	"net/rpc"
+	"net/url"
 )
 
 type Client struct {
@@ -14,13 +16,13 @@ type Client struct {
 // clientCodec is rpc.ClientCodec interface implementation.
 type clientCodec struct {
 	// url presents url of xmlrpc service
-	url string
+	url *url.URL
 
 	// httpClient works with HTTP protocol
 	httpClient *http.Client
 
 	// cookies stores cookies received on last request
-	cookies []*http.Cookie
+	cookies http.CookieJar
 
 	// responses presents map of active requests. It is required to return request id, that
 	// rpc.Client can mark them as done.
@@ -33,10 +35,10 @@ type clientCodec struct {
 }
 
 func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (err error) {
-	httpRequest, err := NewRequest(codec.url, request.ServiceMethod, args)
+	httpRequest, err := NewRequest(codec.url.String(), request.ServiceMethod, args)
 
 	if codec.cookies != nil {
-		for _, cookie := range codec.cookies {
+		for _, cookie := range codec.cookies.Cookies(codec.url) {
 			httpRequest.AddCookie(cookie)
 		}
 	}
@@ -52,8 +54,8 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 		return err
 	}
 
-	if codec.cookies == nil {
-		codec.cookies = httpResponse.Cookies()
+	if codec.cookies != nil {
+		codec.cookies.SetCookies(codec.url, httpResponse.Cookies())
 	}
 
 	codec.responses[request.Seq] = httpResponse
@@ -111,18 +113,31 @@ func (codec *clientCodec) Close() error {
 }
 
 // NewClient returns instance of rpc.Client object, that is used to send request to xmlrpc service.
-func NewClient(url string, transport http.RoundTripper) (*Client, error) {
+func NewClient(requrl string, transport http.RoundTripper) (*Client, error) {
 	if transport == nil {
 		transport = http.DefaultTransport
 	}
 
 	httpClient := &http.Client{Transport: transport}
 
+	jar, err := cookiejar.New(nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	u, err := url.Parse(requrl)
+
+	if err != nil {
+		return nil, err
+	}
+
 	codec := clientCodec{
-		url:        url,
+		url:        u,
 		httpClient: httpClient,
 		ready:      make(chan uint64),
 		responses:  make(map[uint64]*http.Response),
+		cookies:    jar,
 	}
 
 	return &Client{rpc.NewClientWithCodec(&codec)}, nil

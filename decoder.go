@@ -106,6 +106,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 	switch typeName {
 	case "struct":
 		ismap := false
+		pmap := val
 		valType := val.Type()
 
 		if err = checkType(val, reflect.Struct); err != nil {
@@ -113,6 +114,11 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 				if valType.Key().Kind() != reflect.String {
 					return fmt.Errorf("only maps with string key type can be unmarshalled")
 				}
+				ismap = true
+			} else if checkType(val, reflect.Interface) == nil && val.IsNil() {
+				var dummy map[string]interface{}
+				pmap = reflect.New(reflect.TypeOf(dummy)).Elem()
+				valType = pmap.Type()
 				ismap = true
 			} else {
 				return err
@@ -138,7 +144,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			}
 		} else {
 			// Create initial empty map
-			val.Set(reflect.MakeMap(valType))
+			pmap.Set(reflect.MakeMap(valType))
 		}
 
 		// Process struct members.
@@ -196,14 +202,19 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 				}
 
 				if ismap {
-					val.SetMapIndex(reflect.ValueOf(string(fieldName)), reflect.Indirect(fv))
+					pmap.SetMapIndex(reflect.ValueOf(string(fieldName)), reflect.Indirect(fv))
+					val.Set(pmap)
 				}
 			case xml.EndElement:
 				break StructLoop
 			}
 		}
 	case "array":
-		if err = checkType(val, reflect.Slice); err != nil {
+		pslice := val
+		if checkType(val, reflect.Interface) == nil && val.IsNil() {
+			var dummy []interface{}
+			pslice = reflect.New(reflect.TypeOf(dummy)).Elem()
+		} else if err = checkType(val, reflect.Slice); err != nil {
 			return err
 		}
 
@@ -219,7 +230,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 					return invalidXmlError
 				}
 
-				slice := reflect.MakeSlice(val.Type(), 0, 0)
+				slice := reflect.MakeSlice(pslice.Type(), 0, 0)
 
 			DataLoop:
 				for {
@@ -233,7 +244,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 							return invalidXmlError
 						}
 
-						v := reflect.New(val.Type().Elem())
+						v := reflect.New(pslice.Type().Elem())
 						if err = dec.decodeValue(v); err != nil {
 							return err
 						}
@@ -245,7 +256,8 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 							return err
 						}
 					case xml.EndElement:
-						val.Set(slice)
+						pslice.Set(slice)
+						val.Set(pslice)
 						break DataLoop
 					}
 				}
@@ -271,55 +283,86 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 
 		switch typeName {
 		case "int", "i4":
-			if err = checkType(val, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64); err != nil {
-				return err
-			}
+			if checkType(val, reflect.Interface) == nil && val.IsNil() {
+				i, err := strconv.ParseInt(string(data), 10, 64)
+				if err != nil {
+					return err
+				}
 
-			i, err := strconv.ParseInt(string(data), 10, val.Type().Bits())
-			if err != nil {
+				pi := reflect.New(reflect.TypeOf(i)).Elem()
+				pi.SetInt(i)
+				val.Set(pi)
+			} else if err = checkType(val, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64); err != nil {
 				return err
-			}
+			} else {
+				i, err := strconv.ParseInt(string(data), 10, val.Type().Bits())
+				if err != nil {
+					return err
+				}
 
-			val.SetInt(i)
+				val.SetInt(i)
+			}
 		case "string", "base64":
-			if err = checkType(val, reflect.String); err != nil {
+			str := string(data)
+			if checkType(val, reflect.Interface) == nil && val.IsNil() {
+				pstr := reflect.New(reflect.TypeOf(str)).Elem()
+				pstr.SetString(str)
+				val.Set(pstr)
+			} else if err = checkType(val, reflect.String); err != nil {
 				return err
+			} else {
+				val.SetString(str)
 			}
-
-			val.SetString(string(data))
 		case "dateTime.iso8601":
-			if _, ok := val.Interface().(time.Time); !ok {
-				return TypeMismatchError(fmt.Sprintf("error: type mismatch error - can't decode %v to time", val.Kind()))
-			}
-
 			t, err := time.Parse(iso8601, string(data))
 			if err != nil {
 				return err
 			}
 
-			val.Set(reflect.ValueOf(t))
-		case "boolean":
-			if err = checkType(val, reflect.Bool); err != nil {
-				return err
+			if checkType(val, reflect.Interface) == nil && val.IsNil() {
+				ptime := reflect.New(reflect.TypeOf(t)).Elem()
+				ptime.Set(reflect.ValueOf(t))
+				val.Set(ptime)
+			} else if _, ok := val.Interface().(time.Time); !ok {
+				return TypeMismatchError(fmt.Sprintf("error: type mismatch error - can't decode %v to time", val.Kind()))
+			} else {
+				val.Set(reflect.ValueOf(t))
 			}
-
+		case "boolean":
 			v, err := strconv.ParseBool(string(data))
 			if err != nil {
 				return err
 			}
 
-			val.SetBool(v)
+			if checkType(val, reflect.Interface) == nil && val.IsNil() {
+				pv := reflect.New(reflect.TypeOf(v)).Elem()
+				pv.SetBool(v)
+				val.Set(pv)
+			} else if err = checkType(val, reflect.Bool); err != nil {
+				return err
+			} else {
+				val.SetBool(v)
+			}
 		case "double":
-			if err = checkType(val, reflect.Float32, reflect.Float64); err != nil {
-				return err
-			}
+			if checkType(val, reflect.Interface) == nil && val.IsNil() {
+				i, err := strconv.ParseFloat(string(data), 64)
+				if err != nil {
+					return err
+				}
 
-			i, err := strconv.ParseFloat(string(data), val.Type().Bits())
-			if err != nil {
+				pdouble := reflect.New(reflect.TypeOf(i)).Elem()
+				pdouble.SetFloat(i)
+				val.Set(pdouble)
+			} else if err = checkType(val, reflect.Float32, reflect.Float64); err != nil {
 				return err
-			}
+			} else {
+				i, err := strconv.ParseFloat(string(data), val.Type().Bits())
+				if err != nil {
+					return err
+				}
 
-			val.SetFloat(i)
+				val.SetFloat(i)
+			}
 		default:
 			return errors.New("unsupported type")
 		}

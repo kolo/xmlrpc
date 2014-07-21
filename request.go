@@ -7,7 +7,15 @@ import (
 )
 
 func NewRequest(url string, method string, args interface{}) (*http.Request, error) {
-	body, err := EncodeMethodCall(method, args)
+	var t []interface{}
+	var ok bool
+	if t, ok = args.([]interface{}); !ok {
+		if args != nil {
+			t = []interface{}{args}
+		}
+	}
+
+	body, err := EncodeMethodCall(method, t...)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +31,7 @@ func NewRequest(url string, method string, args interface{}) (*http.Request, err
 	return request, nil
 }
 
-func EncodeMethodCall(method string, args interface{}) ([]byte, error) {
+func EncodeMethodCall(method string, args ...interface{}) ([]byte, error) {
 	var b bytes.Buffer
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
 	b.WriteString(fmt.Sprintf("<methodCall><methodName>%s</methodName>", method))
@@ -31,13 +39,7 @@ func EncodeMethodCall(method string, args interface{}) ([]byte, error) {
 	if args != nil {
 		b.WriteString("<params>")
 
-		var t []interface{}
-		var ok bool
-		if t, ok = args.([]interface{}); !ok {
-			t = []interface{}{args}
-		}
-
-		for _, arg := range t {
+		for _, arg := range args {
 			p, err := marshal(arg)
 			if err != nil {
 				return nil, err
