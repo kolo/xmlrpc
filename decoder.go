@@ -10,6 +10,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"code.google.com/p/go-charset/charset"
+	_ "code.google.com/p/go-charset/data"
 )
 
 const iso8601 = "20060102T15:04:05"
@@ -29,6 +32,8 @@ type decoder struct {
 
 func unmarshal(data []byte, v interface{}) (err error) {
 	dec := &decoder{xml.NewDecoder(bytes.NewBuffer(data))}
+
+	dec.CharsetReader = charset.NewReader
 
 	var tok xml.Token
 	for {
