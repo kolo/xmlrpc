@@ -1,9 +1,15 @@
 package xmlrpc
 
 import (
+	"fmt"
+	"io"
+	"io/ioutil"
 	"reflect"
 	"testing"
 	"time"
+
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 )
 
 type book struct {
@@ -102,4 +108,35 @@ func Test_unmarshalEmptyValueTag(t *testing.T) {
 	if err := unmarshal([]byte("<value/>"), &v); err != nil {
 		t.Fatalf("unmarshal error: %v", err)
 	}
+}
+
+func Test_decodeNonUTF8Response(t *testing.T) {
+	data, err := ioutil.ReadFile("fixtures/cp1251.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	CharsetReader = decode
+
+	var s string
+	if err = unmarshal(data, &s); err != nil {
+		fmt.Println(err)
+		t.Fatal("unmarshal error: cannot decode non utf-8 response")
+	}
+
+	expected := "Л.Н. Толстой - Война и Мир"
+
+	if s != expected {
+		t.Fatalf("unmarshal error:\nexpected: %v\n     got: %v", expected, s)
+	}
+
+	CharsetReader = nil
+}
+
+func decode(charset string, input io.Reader) (io.Reader, error) {
+	if charset != "cp1251" {
+		return nil, fmt.Errorf("unsupported charset")
+	}
+
+	return transform.NewReader(input, charmap.Windows1251.NewDecoder()), nil
 }

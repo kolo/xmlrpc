@@ -15,8 +15,11 @@ import (
 const iso8601 = "20060102T15:04:05"
 
 var (
-	invalidXmlError   = errors.New("invalid xml")
-	typeMismatchError = errors.New("type mismatch")
+	// CharsetReader is a function to generate reader which converts a non UTF-8
+	// charset into UTF-8.
+	CharsetReader func(string, io.Reader) (io.Reader, error)
+
+	invalidXmlError = errors.New("invalid xml")
 )
 
 type TypeMismatchError string
@@ -29,6 +32,10 @@ type decoder struct {
 
 func unmarshal(data []byte, v interface{}) (err error) {
 	dec := &decoder{xml.NewDecoder(bytes.NewBuffer(data))}
+
+	if CharsetReader != nil {
+		dec.CharsetReader = CharsetReader
+	}
 
 	var tok xml.Token
 	for {
