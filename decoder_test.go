@@ -28,6 +28,7 @@ var unmarshalTests = []struct {
 	xml   string
 }{
 	{100, new(*int), "<value><int>100</int></value>"},
+	{int64(45659074), new(*int64), "<value><i8>45659074</i8></value>"},
 	{"Once upon a time", new(*string), "<value><string>Once upon a time</string></value>"},
 	{"Mike & Mick <London, UK>", new(*string), "<value><string>Mike &amp; Mick &lt;London, UK&gt;</string></value>"},
 	{"Once upon a time", new(*string), "<value>Once upon a time</value>"},

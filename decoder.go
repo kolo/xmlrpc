@@ -289,7 +289,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 		}
 
 		switch typeName {
-		case "int", "i4":
+		case "int", "i4", "i8":
 			if checkType(val, reflect.Interface) == nil && val.IsNil() {
 				i, err := strconv.ParseInt(string(data), 10, 64)
 				if err != nil {
