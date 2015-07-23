@@ -17,3 +17,9 @@ func (e *xmlrpcError) Error() string {
 
 // Base64 represents value in base64 encoding
 type Base64 string
+
+type Params struct {
+	Params []interface{}
+}
+
+type Struct map[string]interface{}
