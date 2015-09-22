@@ -34,7 +34,7 @@ Data types encoding rules:
 * string encoded to string;
 * time.Time encoded to datetime.iso8601;
 * xmlrpc.Base64 encoded to base64;
-* slice decoded to array;
+* slice encoded to array;
 
 Structs decoded to struct by following rules:
 * all public field become struct members;
