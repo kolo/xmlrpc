@@ -1,3 +1,5 @@
+[![GoDoc](https://godoc.org/github.com/kolo/xmlrpc?status.svg)](https://godoc.org/github.com/kolo/xmlrpc)
+
 ## Overview
 
 xmlrpc is an implementation of client side part of XMLRPC protocol in Go language.
