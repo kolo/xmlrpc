@@ -24,6 +24,14 @@ Second argument of NewClient function is an object that implements
 interface, it can be used to get more control over connection options.
 By default it initialized by http.DefaultTransport object.
 
+Assuming a call taking 2 parameters, one int and one string:
+
+    args := []interface{}{
+        42,
+        "some text",
+    }
+    client.Call("Bugzilla.another_call", args, &result)
+
 ### Arguments encoding
 
 xmlrpc package supports encoding of native Go data types to method
