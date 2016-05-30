@@ -12,7 +12,10 @@ import (
 	"time"
 )
 
-const iso8601 = "20060102T15:04:05"
+const (
+	iso8601       = "20060102T15:04:05"
+	iso8601hyphen = "2006-01-02T15:04:05Z"
+)
 
 var (
 	// CharsetReader is a function to generate reader which converts a non UTF-8
@@ -321,7 +324,16 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 				val.SetString(str)
 			}
 		case "dateTime.iso8601":
-			t, err := time.Parse(iso8601, string(data))
+			err = nil
+			var t time.Time
+			for _, df := range []string{
+				iso8601, iso8601hyphen,
+			} {
+				t, err = time.Parse(df, string(data))
+				if err == nil {
+					break
+				}
+			}
 			if err != nil {
 				return err
 			}
