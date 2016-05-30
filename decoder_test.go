@@ -22,6 +22,8 @@ type bookUnexported struct {
 	amount int
 }
 
+type timestamp time.Time
+
 var unmarshalTests = []struct {
 	value interface{}
 	ptr   interface{}
@@ -39,6 +41,8 @@ var unmarshalTests = []struct {
 	{-12.134, new(*float32), "<value><double>-12.134</double></value>"},
 	{time.Unix(1386622812, 0).UTC(), new(*time.Time), "<value><dateTime.iso8601>20131209T21:00:12</dateTime.iso8601></value>"},
 	{time.Unix(1386622812, 0).UTC(), new(*time.Time), "<value><dateTime.iso8601>2013-12-09T21:00:12Z</dateTime.iso8601></value>"},
+	{time.Unix(1386622812, 0).UTC(), new(*timestamp), "<value><dateTime.iso8601>20131209T21:00:12</dateTime.iso8601></value>"},
+	{time.Unix(1386622812, 0).UTC(), new(*timestamp), "<value><dateTime.iso8601>2013-12-09T21:00:12Z</dateTime.iso8601></value>"},
 	{[]int{1, 5, 7}, new(*[]int), "<value><array><data><value><int>1</int></value><value><int>5</int></value><value><int>7</int></value></data></array></value>"},
 	{book{"War and Piece", 20}, new(*book), "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
 	{bookUnexported{}, new(*bookUnexported), "<value><struct><member><name>title</name><value><string>War and Piece</string></value></member><member><name>amount</name><value><int>20</int></value></member></struct></value>"},

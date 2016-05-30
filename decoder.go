@@ -342,10 +342,10 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 				ptime := reflect.New(reflect.TypeOf(t)).Elem()
 				ptime.Set(reflect.ValueOf(t))
 				val.Set(ptime)
-			} else if _, ok := val.Interface().(time.Time); !ok {
+			} else if !reflect.TypeOf((time.Time)(t)).ConvertibleTo(val.Type()) {
 				return TypeMismatchError(fmt.Sprintf("error: type mismatch error - can't decode %v to time", val.Kind()))
 			} else {
-				val.Set(reflect.ValueOf(t))
+				val.Set(reflect.ValueOf(t).Convert(val.Type()))
 			}
 		case "boolean":
 			v, err := strconv.ParseBool(string(data))
