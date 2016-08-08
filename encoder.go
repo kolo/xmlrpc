@@ -37,7 +37,7 @@ func encodeValue(val reflect.Value) ([]byte, error) {
 		switch val.Interface().(type) {
 		case time.Time:
 			t := val.Interface().(time.Time)
-			b = []byte(fmt.Sprintf("<dateTime.iso8601>%s</dateTime.iso8601>", t.Format(iso8601)))
+			b = []byte(fmt.Sprintf("<dateTime.iso8601>%s</dateTime.iso8601>", t.UTC().Format(iso8601)))
 		default:
 			b, err = encodeStruct(val)
 		}
