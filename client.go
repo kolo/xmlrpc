@@ -97,7 +97,9 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	codec.response = resp
 
 	response.Seq = seq
+	codec.responsesMu.Lock()
 	delete(codec.responses, seq)
+	codec.responsesMu.Unlock()
 
 	return nil
 }
