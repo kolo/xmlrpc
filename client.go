@@ -66,6 +66,7 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 
 func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error) {
 	seq := <-codec.ready
+
 	httpResponse := codec.responses[seq]
 
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
@@ -109,6 +110,7 @@ func (codec *clientCodec) ReadResponseBody(v interface{}) (err error) {
 func (codec *clientCodec) Close() error {
 	transport := codec.httpClient.Transport.(*http.Transport)
 	transport.CloseIdleConnections()
+	close(codec.ready)
 	return nil
 }
 
