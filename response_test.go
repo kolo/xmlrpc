@@ -65,12 +65,11 @@ const emptyValResp = `
 	</params>
 </methodResponse>`
 
-
 func Test_responseWithEmptyValue(t *testing.T) {
 	resp := NewResponse([]byte(emptyValResp))
 
-	result := struct{
-		User string `xmlrpc:"user"`
+	result := struct {
+		User  string `xmlrpc:"user"`
 		Token string `xmlrpc:"token"`
 	}{}
 

@@ -2,6 +2,7 @@ package xmlrpc
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
@@ -31,7 +32,7 @@ type clientCodec struct {
 	response *Response
 
 	// ready presents channel, that is used to link request and it`s response.
-	ready chan uint64
+	ready chan *uint64
 }
 
 func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (err error) {
@@ -59,15 +60,18 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 	}
 
 	codec.responses[request.Seq] = httpResponse
-	codec.ready <- request.Seq
+	codec.ready <- &request.Seq
 
 	return nil
 }
 
 func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error) {
 	seq := <-codec.ready
+	if seq == nil {
+		return io.EOF
+	}
 
-	httpResponse := codec.responses[seq]
+	httpResponse := codec.responses[*seq]
 
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
 		return fmt.Errorf("request error: bad status code - %d", httpResponse.StatusCode)
@@ -89,8 +93,8 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 
 	codec.response = resp
 
-	response.Seq = seq
-	delete(codec.responses, seq)
+	response.Seq = *seq
+	delete(codec.responses, *seq)
 
 	return nil
 }
@@ -137,7 +141,7 @@ func NewClient(requrl string, transport http.RoundTripper) (*Client, error) {
 	codec := clientCodec{
 		url:        u,
 		httpClient: httpClient,
-		ready:      make(chan uint64),
+		ready:      make(chan *uint64),
 		responses:  make(map[uint64]*http.Response),
 		cookies:    jar,
 	}
