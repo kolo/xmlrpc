@@ -7,6 +7,7 @@ import (
 	"net/http/cookiejar"
 	"net/rpc"
 	"net/url"
+	"sync"
 	"time"
 )
 
@@ -27,7 +28,8 @@ type clientCodec struct {
 
 	// responses presents map of active requests. It is required to return request id, that
 	// rpc.Client can mark them as done.
-	responses map[uint64]*http.Response
+	responsesMu sync.RWMutex
+	responses   map[uint64]*http.Response
 
 	response *Response
 
@@ -59,7 +61,10 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 		codec.cookies.SetCookies(codec.url, httpResponse.Cookies())
 	}
 
+	codec.responsesMu.Lock()
 	codec.responses[request.Seq] = httpResponse
+	codec.responsesMu.Unlock()
+
 	codec.ready <- request.Seq
 
 	return nil
@@ -67,7 +72,10 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 
 func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error) {
 	seq := <-codec.ready
+
+	codec.responsesMu.RLock()
 	httpResponse := codec.responses[seq]
+	codec.responsesMu.RUnlock()
 
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
 		return fmt.Errorf("request error: bad status code - %d", httpResponse.StatusCode)
@@ -90,7 +98,9 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	codec.response = resp
 
 	response.Seq = seq
+	codec.responsesMu.Lock()
 	delete(codec.responses, seq)
+	codec.responsesMu.Unlock()
 
 	return nil
 }
