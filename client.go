@@ -2,6 +2,7 @@ package xmlrpc
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
@@ -34,7 +35,7 @@ type clientCodec struct {
 	response *Response
 
 	// ready presents channel, that is used to link request and it`s response.
-	ready chan uint64
+	ready chan *uint64
 }
 
 func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (err error) {
@@ -65,16 +66,19 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 	codec.responses[request.Seq] = httpResponse
 	codec.responsesMu.Unlock()
 
-	codec.ready <- request.Seq
+	codec.ready <- &request.Seq
 
 	return nil
 }
 
 func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error) {
 	seq := <-codec.ready
+	if seq == nil {
+		return io.EOF
+	}
 
 	codec.responsesMu.RLock()
-	httpResponse := codec.responses[seq]
+	httpResponse := codec.responses[*seq]
 	codec.responsesMu.RUnlock()
 
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
@@ -97,9 +101,9 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 
 	codec.response = resp
 
-	response.Seq = seq
+	response.Seq = *seq
 	codec.responsesMu.Lock()
-	delete(codec.responses, seq)
+	delete(codec.responses, *seq)
 	codec.responsesMu.Unlock()
 
 	return nil
@@ -120,6 +124,7 @@ func (codec *clientCodec) ReadResponseBody(v interface{}) (err error) {
 func (codec *clientCodec) Close() error {
 	transport := codec.httpClient.Transport.(*http.Transport)
 	transport.CloseIdleConnections()
+	close(codec.ready)
 	return nil
 }
 
@@ -149,7 +154,7 @@ func NewClient(requrl string, transport http.RoundTripper, timeout time.Duration
 	codec := clientCodec{
 		url:        u,
 		httpClient: httpClient,
-		ready:      make(chan uint64),
+		ready:      make(chan *uint64),
 		responses:  make(map[uint64]*http.Response),
 		cookies:    jar,
 	}
