@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/text/encoding/charmap"
 )
 
 const (
@@ -41,6 +43,8 @@ func unmarshal(data []byte, v interface{}) (err error) {
 
 	if CharsetReader != nil {
 		dec.CharsetReader = CharsetReader
+	} else {
+		dec.CharsetReader = defaultCharsetReader
 	}
 
 	var tok xml.Token
@@ -459,4 +463,16 @@ func checkType(val reflect.Value, kinds ...reflect.Kind) error {
 	}
 
 	return nil
+}
+
+// http://stackoverflow.com/a/34712322/3160958
+// https://groups.google.com/forum/#!topic/golang-nuts/VudK_05B62k
+func defaultCharsetReader(charset string, input io.Reader) (io.Reader, error) {
+	if charset == "iso-8859-1" || charset == "ISO-8859-1" {
+		return charmap.ISO8859_1.NewDecoder().Reader(input), nil
+	} else if strings.HasPrefix(charset, "utf") || strings.HasPrefix(charset, "UTF") {
+		return input, nil
+	}
+
+	return nil, fmt.Errorf("Unknown charset: %s", charset)
 }
