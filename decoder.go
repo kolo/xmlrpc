@@ -298,6 +298,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			return invalidXmlError
 		}
 
+	ParseValue:
 		switch typeName {
 		case "int", "i4", "i8":
 			if checkType(val, reflect.Interface) == nil && val.IsNil() {
@@ -326,6 +327,17 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 				pstr.SetString(str)
 				val.Set(pstr)
 			} else if err = checkType(val, reflect.String); err != nil {
+				valName := val.Type().Name()
+				if valName == "Time" ||
+					(valName == "" &&
+						reflect.Indirect(val).Type().Name() == "Time") {
+					timeField := val.FieldByName("Time")
+					if timeField.IsValid() {
+						val = timeField
+					}
+					typeName = "dateTime.iso8601"
+					goto ParseValue
+				}
 				return err
 			} else {
 				val.SetString(str)
@@ -348,7 +360,14 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 				ptime.Set(reflect.ValueOf(t))
 				val.Set(ptime)
 			} else if !reflect.TypeOf((time.Time)(t)).ConvertibleTo(val.Type()) {
-				return TypeMismatchError(fmt.Sprintf("error: type mismatch error - can't decode %v to time", val.Kind()))
+				return TypeMismatchError(
+					fmt.Sprintf(
+						"error: type mismatch error - can't decode %v (%s.%s) to time",
+						val.Kind(),
+						val.Type().PkgPath(),
+						val.Type().Name(),
+					),
+				)
 			} else {
 				val.Set(reflect.ValueOf(t).Convert(val.Type()))
 			}
