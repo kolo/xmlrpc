@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	iso8601       = "20060102T15:04:05"
-	iso8601hyphen = "2006-01-02T15:04:05Z"
+	iso8601         = "20060102T15:04:05"
+	iso8601hyphen   = "2006-01-02T15:04:05Z"
+	iso8601hyphenTZ = "2006-01-02T15:04:05-07:00"
 )
 
 var (
@@ -23,6 +24,8 @@ var (
 	CharsetReader func(string, io.Reader) (io.Reader, error)
 
 	invalidXmlError = errors.New("invalid xml")
+
+	dateFormats = []string{iso8601, iso8601hyphen, iso8601hyphenTZ}
 )
 
 type TypeMismatchError string
@@ -326,9 +329,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 		case "dateTime.iso8601":
 			err = nil
 			var t time.Time
-			for _, df := range []string{
-				iso8601, iso8601hyphen,
-			} {
+			for _, df := range dateFormats {
 				t, err = time.Parse(df, string(data))
 				if err == nil {
 					break
