@@ -328,14 +328,19 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 				val.Set(pstr)
 			} else if err = checkType(val, reflect.String); err != nil {
 				valName := val.Type().Name()
-				if valName == "Time" ||
-					(valName == "" &&
-						reflect.Indirect(val).Type().Name() == "Time") {
-					timeField := val.FieldByName("Time")
+				if valName == "" {
+					valName = reflect.Indirect(val).Type().Name()
+				}
+
+				if valName == "Time" {
+					timeField := val.FieldByName(valName)
 					if timeField.IsValid() {
 						val = timeField
 					}
 					typeName = "dateTime.iso8601"
+					goto ParseValue
+				} else if strings.HasPrefix(strings.ToLower(valName), "float") {
+					typeName = "double"
 					goto ParseValue
 				}
 				return err
