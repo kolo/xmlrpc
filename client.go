@@ -3,7 +3,6 @@ package xmlrpc
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/rpc"
@@ -40,6 +39,9 @@ type clientCodec struct {
 
 func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (err error) {
 	httpRequest, err := NewRequest(codec.url.String(), request.ServiceMethod, args)
+	if err != nil {
+		return err
+	}
 
 	if codec.cookies != nil {
 		for _, cookie := range codec.cookies.Cookies(codec.url) {
@@ -47,13 +49,7 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 		}
 	}
 
-	if err != nil {
-		return err
-	}
-
-	var httpResponse *http.Response
-	httpResponse, err = codec.httpClient.Do(httpRequest)
-
+	httpResponse, err := codec.httpClient.Do(httpRequest)
 	if err != nil {
 		return err
 	}
@@ -72,8 +68,8 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 }
 
 func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error) {
-	seq := <-codec.ready
-	if seq == nil {
+	seq, ok := <-codec.ready
+	if !ok {
 		return io.EOF
 	}
 
@@ -81,17 +77,22 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	httpResponse := codec.responses[*seq]
 	codec.responsesMu.RUnlock()
 
+	defer func() {
+		httpResponse.Body.Close()
+		codec.responsesMu.Lock()
+		delete(codec.responses, *seq)
+		codec.responsesMu.Unlock()
+	}()
+
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
 		return fmt.Errorf("request error: bad status code - %d", httpResponse.StatusCode)
 	}
 
-	respData, err := ioutil.ReadAll(httpResponse.Body)
-
+	respData := make([]byte, httpResponse.ContentLength)
+	_, err = io.ReadFull(httpResponse.Body, respData)
 	if err != nil {
 		return err
 	}
-
-	httpResponse.Body.Close()
 
 	resp := NewResponse(respData)
 
@@ -102,9 +103,6 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	codec.response = resp
 
 	response.Seq = *seq
-	codec.responsesMu.Lock()
-	delete(codec.responses, *seq)
-	codec.responsesMu.Unlock()
 
 	return nil
 }
