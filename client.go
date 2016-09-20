@@ -7,6 +7,7 @@ import (
 	"net/http/cookiejar"
 	"net/rpc"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -88,7 +89,17 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 		return fmt.Errorf("request error: bad status code - %d", httpResponse.StatusCode)
 	}
 
-	respData := make([]byte, httpResponse.ContentLength)
+	contentLength := httpResponse.ContentLength
+	if contentLength == -1 {
+		if ntcoentLengthHeader, ok := httpResponse.Header["Ntcoent-Length"]; ok {
+			ntcoentLength, err := strconv.Atoi(ntcoentLengthHeader[0])
+			if err == nil {
+				contentLength = int64(ntcoentLength)
+			}
+		}
+	}
+
+	respData := make([]byte, contentLength)
 	_, err = io.ReadFull(httpResponse.Body, respData)
 	if err != nil {
 		return err
