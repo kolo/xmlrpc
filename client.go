@@ -69,7 +69,7 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 	return nil
 }
 
-func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error) {
+func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) error {
 	seq, ok := <-codec.ready
 	if !ok {
 		return io.EOF
@@ -86,10 +86,6 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 		codec.responsesMu.Unlock()
 	}()
 
-	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
-		return fmt.Errorf("request error: bad status code - %d", httpResponse.StatusCode)
-	}
-
 	contentLength := httpResponse.ContentLength
 	if contentLength == -1 {
 		if ntcoentLengthHeader, ok := httpResponse.Header["Ntcoent-Length"]; ok {
@@ -101,6 +97,7 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	}
 
 	var respData []byte
+	var err error
 	if contentLength != -1 {
 		respData = make([]byte, contentLength)
 		_, err = io.ReadFull(httpResponse.Body, respData)
@@ -111,15 +108,21 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 		return err
 	}
 
-	resp := NewResponse(respData)
+	resp := NewResponse(respData, httpResponse.StatusCode)
 
 	if resp.Failed() {
-		response.Error = fmt.Sprintf("%v", resp.Err())
+		err := resp.Err()
+		response.Error = fmt.Sprintf("%v", err)
+		return err
 	}
 
 	codec.response = resp
 
 	response.Seq = *seq
+
+	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
+		return &XmlRpcError{HttpStatusCode: httpResponse.StatusCode}
+	}
 
 	return nil
 }

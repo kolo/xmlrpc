@@ -5,14 +5,17 @@ import (
 )
 
 // xmlrpcError represents errors returned on xmlrpc request.
-type xmlrpcError struct {
-	code string
-	err  string
+type XmlRpcError struct {
+	Code           string
+	Err            string
+	HttpStatusCode int
 }
 
 // Error() method implements Error interface
-func (e *xmlrpcError) Error() string {
-	return fmt.Sprintf("error: \"%s\" code: \"%s\"", e.err, e.code)
+func (e *XmlRpcError) Error() string {
+	return fmt.Sprintf(
+		"error: %s, code: %s, http status code: %d",
+		e.Err, e.Code, e.HttpStatusCode)
 }
 
 // Base64 represents value in base64 encoding

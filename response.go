@@ -11,22 +11,26 @@ var (
 type failedResponse struct {
 	Code  string `xmlrpc:"faultCode"`
 	Error string `xmlrpc:"faultString"`
+	HttpStatusCode int
 }
 
 func (r *failedResponse) err() error {
-	return &xmlrpcError{
-		code: r.Code,
-		err:  r.Error,
+	return &XmlRpcError{
+		Code: r.Code,
+		Err:  r.Error,
+		HttpStatusCode: r.HttpStatusCode,
 	}
 }
 
 type Response struct {
 	data []byte
+	httpStatusCode int
 }
 
-func NewResponse(data []byte) *Response {
+func NewResponse(data []byte, httpStatusCode int) *Response {
 	return &Response{
 		data: data,
+		httpStatusCode: httpStatusCode,
 	}
 }
 
@@ -39,6 +43,7 @@ func (r *Response) Err() error {
 	if err := unmarshal(r.data, failedResp); err != nil {
 		return err
 	}
+	failedResp.HttpStatusCode = r.httpStatusCode
 
 	return failedResp.err()
 }
