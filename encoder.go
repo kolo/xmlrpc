@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -86,16 +87,26 @@ func encodeStruct(val reflect.Value) ([]byte, error) {
 
 	t := val.Type()
 	for i := 0; i < t.NumField(); i++ {
-		b.WriteString("<member>")
 		f := t.Field(i)
+		tag := f.Tag.Get("xmlrpc")
+		name := f.Name
+		fieldVal := val.FieldByName(f.Name)
 
-		name := f.Tag.Get("xmlrpc")
-		if name == "" {
-			name = f.Name
+		// Omit empty fields (defined as nil pointers)
+		if tag != "" {
+			parts := strings.Split(tag, ",")
+			name = parts[0]
+			if len(parts) > 1 && parts[1] == "omitempty" {
+				if fieldVal.Type().Kind() == reflect.Ptr && !reflect.Indirect(fieldVal).IsValid() {
+					continue
+				}
+			}
 		}
+
+		b.WriteString("<member>")
 		b.WriteString(fmt.Sprintf("<name>%s</name>", name))
 
-		p, err := encodeValue(val.FieldByName(f.Name))
+		p, err := encodeValue(fieldVal)
 		if err != nil {
 			return nil, err
 		}
