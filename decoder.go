@@ -153,6 +153,9 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 
 				if fieldVal.CanSet() {
 					if fn := field.Tag.Get("xmlrpc"); fn != "" {
+						if strings.Contains(fn, ",") {
+							fn = strings.Split(fn, ",")[0]
+						}
 						fields[fn] = fieldVal
 					} else {
 						fields[field.Name] = fieldVal
