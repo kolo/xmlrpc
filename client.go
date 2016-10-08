@@ -89,9 +89,9 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) error {
 	contentLength := httpResponse.ContentLength
 	if contentLength == -1 {
 		if ntcoentLengthHeader, ok := httpResponse.Header["Ntcoent-Length"]; ok {
-			ntcoentLength, err := strconv.Atoi(ntcoentLengthHeader[0])
+			ntcoentLength, err := strconv.ParseInt(ntcoentLengthHeader[0], 10, 64)
 			if err == nil {
-				contentLength = int64(ntcoentLength)
+				contentLength = ntcoentLength
 			}
 		}
 	}
