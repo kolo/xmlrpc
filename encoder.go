@@ -108,7 +108,7 @@ func encodeStruct(val reflect.Value) ([]byte, error) {
 			parts := strings.Split(tag, ",")
 			name = parts[0]
 			if len(parts) > 1 && parts[1] == "omitempty" {
-				if fieldValKind == reflect.Ptr && !reflect.Indirect(fieldVal).IsValid() {
+				if fieldValKind == reflect.Ptr && fieldVal.IsNil() {
 					continue
 				}
 			}
