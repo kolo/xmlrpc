@@ -91,13 +91,24 @@ func encodeStruct(val reflect.Value) ([]byte, error) {
 		tag := f.Tag.Get("xmlrpc")
 		name := f.Name
 		fieldVal := val.FieldByName(f.Name)
+		fieldValKind := fieldVal.Kind()
+
+		// Omit fields who are structs that contain no fields themselves
+		if fieldValKind == reflect.Struct && fieldVal.NumField() == 0 {
+			continue
+		}
+
+		// Omit empty slices
+		if fieldValKind == reflect.Slice && fieldVal.Len() == 0 {
+			continue
+		}
 
 		// Omit empty fields (defined as nil pointers)
 		if tag != "" {
 			parts := strings.Split(tag, ",")
 			name = parts[0]
 			if len(parts) > 1 && parts[1] == "omitempty" {
-				if fieldVal.Type().Kind() == reflect.Ptr && !reflect.Indirect(fieldVal).IsValid() {
+				if fieldValKind == reflect.Ptr && !reflect.Indirect(fieldVal).IsValid() {
 					continue
 				}
 			}
