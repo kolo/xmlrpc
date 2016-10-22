@@ -311,15 +311,27 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 				pi := reflect.New(reflect.TypeOf(i)).Elem()
 				pi.SetInt(i)
 				val.Set(pi)
-			} else if err = checkType(val, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64); err != nil {
+			} else if err = checkType(val, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64); err != nil {
 				return err
 			} else {
-				i, err := strconv.ParseInt(string(data), 10, val.Type().Bits())
-				if err != nil {
-					return err
-				}
+				k := val.Kind()
+				isInt := k == reflect.Int || k == reflect.Int8 || k == reflect.Int16 || k == reflect.Int32 || k == reflect.Int64
 
-				val.SetInt(i)
+				if isInt {
+					i, err := strconv.ParseInt(string(data), 10, val.Type().Bits())
+					if err != nil {
+						return err
+					}
+
+					val.SetInt(i)
+				} else {
+					i, err := strconv.ParseUint(string(data), 10, val.Type().Bits())
+					if err != nil {
+						return err
+					}
+
+					val.SetUint(i)
+				}
 			}
 		case "string", "base64":
 			str := string(data)
