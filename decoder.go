@@ -158,20 +158,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 
 		if !ismap {
 			fields = make(map[string]reflect.Value)
-
-			for i := 0; i < valType.NumField(); i++ {
-				field := valType.Field(i)
-				fieldVal := val.FieldByName(field.Name)
-
-				if fieldVal.CanSet() {
-					if fn := field.Tag.Get("xmlrpc"); fn != "" {
-						fn = strings.Split(fn, ",")[0]
-						fields[fn] = fieldVal
-					} else {
-						fields[field.Name] = fieldVal
-					}
-				}
-			}
+			buildStructFieldMap(&fields, val)
 		} else {
 			// Create initial empty map
 			pmap.Set(reflect.MakeMap(valType))
@@ -512,6 +499,30 @@ func checkType(val reflect.Value, kinds ...reflect.Kind) error {
 	}
 
 	return nil
+}
+
+func buildStructFieldMap(fieldMap *map[string]reflect.Value, val reflect.Value) {
+	valType := val.Type()
+	valFieldNum := valType.NumField()
+	for i := 0; i < valFieldNum; i++ {
+		field := valType.Field(i)
+		fieldVal := val.FieldByName(field.Name)
+
+		if field.Anonymous {
+			// Drill down into embedded structs
+			buildStructFieldMap(fieldMap, fieldVal)
+			continue
+		}
+
+		if fieldVal.CanSet() {
+			if fn := field.Tag.Get("xmlrpc"); fn != "" {
+				fn = strings.Split(fn, ",")[0]
+				(*fieldMap)[fn] = fieldVal
+			} else {
+				(*fieldMap)[field.Name] = fieldVal
+			}
+		}
+	}
 }
 
 // http://stackoverflow.com/a/34712322/3160958
