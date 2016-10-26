@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +29,8 @@ var (
 	invalidXmlError = errors.New("invalid xml")
 
 	dateFormats = []string{iso8601, iso8601hyphen, iso8601hyphenTZ}
+
+	topArrayRE = regexp.MustCompile(`^<\?xml version="1.0" encoding=".+"\?>\s*<params>\s*<param>\s*<value>\s*<array>`)
 )
 
 type TypeMismatchError string
@@ -59,7 +62,16 @@ func unmarshal(data []byte, v interface{}) (err error) {
 				if val.Kind() != reflect.Ptr {
 					return errors.New("non-pointer value passed to unmarshal")
 				}
-				if err = dec.decodeValue(val.Elem()); err != nil {
+
+				val = val.Elem()
+				// Some APIs that normally return a collection, omit the []'s when
+				// the API returns a single value.
+				if val.Kind() == reflect.Slice && !topArrayRE.MatchString(string(data)) {
+					val.Set(reflect.MakeSlice(val.Type(), 1, 1))
+					val = val.Index(0)
+				}
+
+				if err = dec.decodeValue(val); err != nil {
 					return err
 				}
 
