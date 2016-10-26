@@ -80,50 +80,63 @@ func encodeValue(val reflect.Value) ([]byte, error) {
 	return []byte(fmt.Sprintf("<value>%s</value>", string(b))), nil
 }
 
-func encodeStruct(val reflect.Value) ([]byte, error) {
+func encodeStruct(value reflect.Value) ([]byte, error) {
 	var b bytes.Buffer
 
 	b.WriteString("<struct>")
 
-	t := val.Type()
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-		tag := f.Tag.Get("xmlrpc")
-		name := f.Name
-		fieldVal := val.FieldByName(f.Name)
-		fieldValKind := fieldVal.Kind()
+	vals := []reflect.Value{value}
+	for j := 0; j < len(vals); j++ {
+		val := vals[j]
+		t := val.Type()
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			tag := f.Tag.Get("xmlrpc")
+			name := f.Name
+			fieldVal := val.FieldByName(f.Name)
+			fieldValKind := fieldVal.Kind()
 
-		// Omit fields who are structs that contain no fields themselves
-		if fieldValKind == reflect.Struct && fieldVal.NumField() == 0 {
-			continue
-		}
+			// Omit fields who are structs that contain no fields themselves
+			if fieldValKind == reflect.Struct && fieldVal.NumField() == 0 {
+				continue
+			}
 
-		// Omit empty slices
-		if fieldValKind == reflect.Slice && fieldVal.Len() == 0 {
-			continue
-		}
+			// Omit empty slices
+			if fieldValKind == reflect.Slice && fieldVal.Len() == 0 {
+				continue
+			}
 
-		// Omit empty fields (defined as nil pointers)
-		if tag != "" {
-			parts := strings.Split(tag, ",")
-			name = parts[0]
-			if len(parts) > 1 && parts[1] == "omitempty" {
-				if fieldValKind == reflect.Ptr && fieldVal.IsNil() {
-					continue
+			// Omit empty fields (defined as nil pointers)
+			if tag != "" {
+				parts := strings.Split(tag, ",")
+				name = parts[0]
+				if len(parts) > 1 && parts[1] == "omitempty" {
+					if fieldValKind == reflect.Ptr && fieldVal.IsNil() {
+						continue
+					}
 				}
 			}
+
+			// Drill down into anonymous/embedded structs and do not expose the
+			// containing embedded struct in request.
+			// This will effectively pull up fields in embedded structs to look
+			// as part of the original struct in the request.
+			if f.Anonymous {
+				vals = append(vals, fieldVal)
+				continue
+			}
+
+			b.WriteString("<member>")
+			b.WriteString(fmt.Sprintf("<name>%s</name>", name))
+
+			p, err := encodeValue(fieldVal)
+			if err != nil {
+				return nil, err
+			}
+			b.Write(p)
+
+			b.WriteString("</member>")
 		}
-
-		b.WriteString("<member>")
-		b.WriteString(fmt.Sprintf("<name>%s</name>", name))
-
-		p, err := encodeValue(fieldVal)
-		if err != nil {
-			return nil, err
-		}
-		b.Write(p)
-
-		b.WriteString("</member>")
 	}
 
 	b.WriteString("</struct>")
