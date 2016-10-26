@@ -96,6 +96,11 @@ func encodeStruct(value reflect.Value) ([]byte, error) {
 			fieldVal := val.FieldByName(f.Name)
 			fieldValKind := fieldVal.Kind()
 
+			// Omit unexported fields
+			if !fieldVal.CanInterface() {
+				continue
+			}
+
 			// Omit fields who are structs that contain no fields themselves
 			if fieldValKind == reflect.Struct && fieldVal.NumField() == 0 {
 				continue
