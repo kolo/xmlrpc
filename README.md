@@ -10,17 +10,22 @@ statement.
 
 ## Usage
 
-    client, _ := xmlrpc.NewClient("https://bugzilla.mozilla.org/xmlrpc.cgi", nil)
+    client, _ := xmlrpc.NewClient("https://bugzilla.mozilla.org/xmlrpc.cgi")
     result := struct{
       Version string `xmlrpc:"version"`
     }{}
     client.Call("Bugzilla.version", nil, &result)
     fmt.Printf("Version: %s\n", result.Version) // Version: 4.2.7+
 
-Second argument of NewClient function is an object that implements
-[http.RoundTripper](http://golang.org/pkg/net/http/#RoundTripper)
-interface, it can be used to get more control over connection options.
-By default it initialized by http.DefaultTransport object.
+
+Optionally, you may provide the following options after the URL argument in NewClient:
+
+* xmlrpc.BasicAuth(username, password string) - The credentials are passed in
+the Authorization HTTP request header per
+[RFC1945](https://tools.ietf.org/html/rfc1945#section-11.1).
+* xmlrpc.Transport([http.RoundTripper](http://golang.org/pkg/net/http/#RoundTripper)) -
+The RoundTripper interface can be used to get more control over connection
+options. By default it initialized by http.DefaultTransport object.
 
 ### Arguments encoding
 
@@ -28,6 +33,7 @@ xmlrpc package supports encoding of native Go data types to method
 arguments.
 
 Data types encoding rules:
+
 * int, int8, int16, int32, int64 encoded to int;
 * float32, float64 encoded to double;
 * bool encoded to boolean;
@@ -37,6 +43,7 @@ Data types encoding rules:
 * slice decoded to array;
 
 Structs decoded to struct by following rules:
+
 * all public field become struct members;
 * field name become member name;
 * if field has xmlrpc tag, its value become member name.
@@ -50,6 +57,7 @@ Each value of such slice encoded as separate argument.
 Result of remote function is decoded to native Go data type.
 
 Data types decoding rules:
+
 * int, i4 decoded to int, int8, int16, int32, int64;
 * double decoded to float32, float64;
 * boolean decoded to bool;
@@ -61,7 +69,8 @@ Data types decoding rules:
 
 ## Implementation details
 
-xmlrpc package contains clientCodec type, that implements [rpc.ClientCodec](http://golang.org/pkg/net/rpc/#ClientCodec)
+xmlrpc package contains clientCodec type, that implements
+[rpc.ClientCodec](http://golang.org/pkg/net/rpc/#ClientCodec)
 interface of [net/rpc](http://golang.org/pkg/net/rpc) package.
 
 xmlrpc package works over HTTP protocol, but some internal functions

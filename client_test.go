@@ -70,7 +70,7 @@ func Test_FailedCall(t *testing.T) {
 }
 
 func newClient(t *testing.T) *Client {
-	client, err := NewClient("http://localhost:5001", nil)
+	client, err := NewClient("http://localhost:5001")
 	if err != nil {
 		t.Fatalf("Can't create client: %v", err)
 	}
