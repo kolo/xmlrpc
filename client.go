@@ -107,8 +107,10 @@ func (codec *clientCodec) ReadResponseBody(v interface{}) (err error) {
 }
 
 func (codec *clientCodec) Close() error {
-	transport := codec.httpClient.Transport.(*http.Transport)
-	transport.CloseIdleConnections()
+	if codec.httpClient.Transport != nil {
+		transport := codec.httpClient.Transport.(*http.Transport)
+		transport.CloseIdleConnections()
+	}
 	return nil
 }
 
@@ -117,8 +119,15 @@ func NewClient(requrl string, transport http.RoundTripper) (*Client, error) {
 	if transport == nil {
 		transport = http.DefaultTransport
 	}
+	return newClient(requrl, &http.Client{Transport: transport})
+}
 
-	httpClient := &http.Client{Transport: transport}
+// NewClientHttpClient returns an instance of rpc.Client used to send requests to an XML-RPC service based on an http.Client.
+func NewClientHttpClient(requrl string, c *http.Client) (*Client, error) {
+	return newClient(requrl, c)
+}
+
+func newClient(requrl string, httpClient *http.Client) (*Client, error) {
 
 	jar, err := cookiejar.New(nil)
 
