@@ -232,7 +232,16 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			var dummy []interface{}
 			pslice = reflect.New(reflect.TypeOf(dummy)).Elem()
 		} else if err = checkType(val, reflect.Slice); err != nil {
-			return err
+			// Check to see if we have an unexpected array when we expect
+			// a struct. Adjust by expecting an array of the struct type
+			// and see if things still work.
+			// https://github.com/renier/xmlrpc/pull/2
+			if val.Kind() == reflect.Struct {
+				pslice = reflect.New(reflect.SliceOf(reflect.TypeOf(val.Interface()))).Elem()
+				val = pslice
+			} else {
+				return err
+			}
 		}
 
 	ArrayLoop:
