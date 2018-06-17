@@ -32,6 +32,9 @@ type clientCodec struct {
 
 	// ready presents channel, that is used to link request and it`s response.
 	ready chan uint64
+
+	// close notifies codec is closed
+	close chan uint64
 }
 
 func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (err error) {
@@ -65,7 +68,13 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 }
 
 func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error) {
-	seq := <-codec.ready
+	var seq uint64
+	select {
+	case seq = <-codec.ready:
+	case <-codec.close:
+		err = fmt.Errorf("codec is closed")
+		return
+	}
 	httpResponse := codec.responses[seq]
 
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
@@ -109,6 +118,7 @@ func (codec *clientCodec) ReadResponseBody(v interface{}) (err error) {
 func (codec *clientCodec) Close() error {
 	transport := codec.httpClient.Transport.(*http.Transport)
 	transport.CloseIdleConnections()
+	close(codec.close)
 	return nil
 }
 
@@ -136,6 +146,7 @@ func NewClient(requrl string, transport http.RoundTripper) (*Client, error) {
 		url:        u,
 		httpClient: httpClient,
 		ready:      make(chan uint64),
+		close:      make(chan uint64),
 		responses:  make(map[uint64]*http.Response),
 		cookies:    jar,
 	}
