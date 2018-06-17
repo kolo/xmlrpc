@@ -27,27 +27,54 @@ var unmarshalTests = []struct {
 	ptr   interface{}
 	xml   string
 }{
+	// int, i4, i8
+	{0, new(*int), "<value><int></int></value>"},
 	{100, new(*int), "<value><int>100</int></value>"},
+	{389451, new(*int), "<value><i4>389451</i4></value>"},
 	{int64(45659074), new(*int64), "<value><i8>45659074</i8></value>"},
+
+	// string
 	{"Once upon a time", new(*string), "<value><string>Once upon a time</string></value>"},
 	{"Mike & Mick <London, UK>", new(*string), "<value><string>Mike &amp; Mick &lt;London, UK&gt;</string></value>"},
 	{"Once upon a time", new(*string), "<value>Once upon a time</value>"},
+
+	// base64
 	{"T25jZSB1cG9uIGEgdGltZQ==", new(*string), "<value><base64>T25jZSB1cG9uIGEgdGltZQ==</base64></value>"},
+
+	// boolean
 	{true, new(*bool), "<value><boolean>1</boolean></value>"},
 	{false, new(*bool), "<value><boolean>0</boolean></value>"},
+
+	// double
 	{12.134, new(*float32), "<value><double>12.134</double></value>"},
 	{-12.134, new(*float32), "<value><double>-12.134</double></value>"},
-	{time.Unix(1386622812, 0).UTC(), new(*time.Time), "<value><dateTime.iso8601>20131209T21:00:12</dateTime.iso8601></value>"},
+
+	// datetime.iso8601
+	{_time("2013-12-09T21:00:12Z"), new(*time.Time), "<value><dateTime.iso8601>20131209T21:00:12</dateTime.iso8601></value>"},
+	{_time("2013-12-09T21:00:12Z"), new(*time.Time), "<value><dateTime.iso8601>20131209T21:00:12Z</dateTime.iso8601></value>"},
+	{_time("2013-12-09T21:00:12-01:00"), new(*time.Time), "<value><dateTime.iso8601>20131209T21:00:12-01:00</dateTime.iso8601></value>"},
+	{_time("2013-12-09T21:00:12+01:00"), new(*time.Time), "<value><dateTime.iso8601>20131209T21:00:12+01:00</dateTime.iso8601></value>"},
+	{_time("2013-12-09T21:00:12Z"), new(*time.Time), "<value><dateTime.iso8601>2013-12-09T21:00:12</dateTime.iso8601></value>"},
+	{_time("2013-12-09T21:00:12Z"), new(*time.Time), "<value><dateTime.iso8601>2013-12-09T21:00:12Z</dateTime.iso8601></value>"},
+	{_time("2013-12-09T21:00:12-01:00"), new(*time.Time), "<value><dateTime.iso8601>2013-12-09T21:00:12-01:00</dateTime.iso8601></value>"},
+	{_time("2013-12-09T21:00:12+01:00"), new(*time.Time), "<value><dateTime.iso8601>2013-12-09T21:00:12+01:00</dateTime.iso8601></value>"},
+
+	// array
 	{[]int{1, 5, 7}, new(*[]int), "<value><array><data><value><int>1</int></value><value><int>5</int></value><value><int>7</int></value></data></array></value>"},
+	{[]interface{}{"A", "5"}, new(interface{}), "<value><array><data><value><string>A</string></value><value><string>5</string></value></data></array></value>"},
+
+	// struct
 	{book{"War and Piece", 20}, new(*book), "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
 	{bookUnexported{}, new(*bookUnexported), "<value><struct><member><name>title</name><value><string>War and Piece</string></value></member><member><name>amount</name><value><int>20</int></value></member></struct></value>"},
-	{0, new(*int), "<value><int></int></value>"},
-	{[]interface{}{"A", "5"}, new(interface{}), "<value><array><data><value><string>A</string></value><value><string>5</string></value></data></array></value>"},
-	//{map[string]interface{}{"Name": "John Smith",
-	//	"Age":   6,
-	//	"Wight": []interface{}{66.67, 100.5}},
-	//	new(interface{}), "<value><struct><member><name>Name</name><value><string>John Smith</string></value></member><member><name>Age</name><value><int>6</int></value></member><member><name>Wight</name><value><array><data><value><double>66.67</double></value><value><double>100.5</double></value></data></array></value></member></struct></value>"},
 	{map[string]interface{}{"Name": "John Smith"}, new(interface{}), "<value><struct><member><name>Name</name><value><string>John Smith</string></value></member></struct></value>"},
+}
+
+func _time(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(fmt.Sprintf("time parsing error: %v", err))
+	}
+	return t
 }
 
 func Test_unmarshal(t *testing.T) {
