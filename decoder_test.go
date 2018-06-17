@@ -118,10 +118,10 @@ func Test_unmarshalToNil(t *testing.T) {
 func Test_typeMismatchError(t *testing.T) {
 	var s string
 
-	tt := unmarshalTests[0]
+	encoded := "<value><int>100</int></value>"
 	var err error
 
-	if err = unmarshal([]byte(tt.xml), &s); err == nil {
+	if err = unmarshal([]byte(encoded), &s); err == nil {
 		t.Fatal("unmarshal error: expected error, but didn't get it")
 	}
 
