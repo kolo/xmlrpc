@@ -3,6 +3,7 @@
 package xmlrpc
 
 import (
+	"sync"
 	"testing"
 	"time"
 )
@@ -69,6 +70,27 @@ func Test_FailedCall(t *testing.T) {
 	if err := client.Call("service.error", nil, &result); err == nil {
 		t.Fatal("expected service.error returns error, but it didn't")
 	}
+}
+
+func Test_ConcurrentCalls(t *testing.T) {
+	client := newClient(t)
+
+	call := func() {
+		var result time.Time
+		client.Call("service.time", nil, &result)
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func() {
+			call()
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+	client.Close()
 }
 
 func newClient(t *testing.T) *Client {
