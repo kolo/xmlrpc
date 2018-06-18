@@ -3,6 +3,8 @@
 package xmlrpc
 
 import (
+	"context"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -91,6 +93,42 @@ func Test_ConcurrentCalls(t *testing.T) {
 
 	wg.Wait()
 	client.Close()
+}
+
+func Test_CloseMemoryLeak(t *testing.T) {
+	expected := runtime.NumGoroutine()
+
+	for i := 0; i < 3; i++ {
+		client := newClient(t)
+		client.Call("service.time", nil, nil)
+		client.Close()
+	}
+
+	var actual int
+
+	// It takes some time to stop running goroutinges. This function checks number of
+	// running goroutines. It finishes execution if number is same as expected or timeout
+	// has been reached.
+	func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				actual = runtime.NumGoroutine()
+				if actual == expected {
+					return
+				}
+			}
+		}
+	}()
+
+	if actual != expected {
+		t.Errorf("expected number of running goroutines to be %d, but got %d", expected, actual)
+	}
 }
 
 func newClient(t *testing.T) *Client {
