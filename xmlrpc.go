@@ -6,13 +6,13 @@ import (
 
 // xmlrpcError represents errors returned on xmlrpc request.
 type xmlrpcError struct {
-	code int
+	code interface{}
 	err  string
 }
 
 // Error() method implements Error interface
 func (e *xmlrpcError) Error() string {
-	return fmt.Sprintf("error: \"%s\" code: %d", e.err, e.code)
+	return fmt.Sprintf("error: \"%s\" code: %v", e.err, e.code)
 }
 
 // Base64 represents value in base64 encoding
