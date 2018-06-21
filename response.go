@@ -9,8 +9,8 @@ var (
 )
 
 type failedResponse struct {
-	Code  int    `xmlrpc:"faultCode"`
-	Error string `xmlrpc:"faultString"`
+	Code  interface{} `xmlrpc:"faultCode"`
+	Error string      `xmlrpc:"faultString"`
 }
 
 func (r *failedResponse) err() error {
