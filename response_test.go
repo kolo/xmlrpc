@@ -19,7 +19,7 @@ const faultRespXml = `
         <member>
           <name>faultCode</name>
           <value>
-            <int>410</int>
+            <string>410</string>
           </value>
         </member>
       </struct>
@@ -39,7 +39,7 @@ func Test_failedResponse(t *testing.T) {
 	}
 
 	err := resp.Err().(*xmlrpcError)
-	if err.code != 410 && err.err != "You must log in before using this part of Bugzilla." {
+	if err.code != "410" && err.err != "You must log in before using this part of Bugzilla." {
 		t.Fatal("Err() error: got wrong error")
 	}
 }
