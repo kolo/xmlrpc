@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func NewRequest(url string, method string, args interface{}) (*http.Request, error) {
+func NewRequest(url string, method string, httpHeaders map[string]string, args interface{}) (*http.Request, error) {
 	var t []interface{}
 	var ok bool
 	if t, ok = args.([]interface{}); !ok {
@@ -23,6 +23,10 @@ func NewRequest(url string, method string, args interface{}) (*http.Request, err
 	request, err := http.NewRequest("POST", url, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
+	}
+
+	for k, v := range httpHeaders {
+		request.Header.Set(k, v)
 	}
 
 	request.Header.Set("Content-Type", "text/xml")
