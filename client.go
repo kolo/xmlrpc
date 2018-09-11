@@ -20,6 +20,9 @@ type clientCodec struct {
 	// url presents url of xmlrpc service
 	url *url.URL
 
+	// Optional HTTP headers
+	httpHeaders map[string]string
+
 	// httpClient works with HTTP protocol
 	httpClient *http.Client
 
@@ -41,7 +44,7 @@ type clientCodec struct {
 }
 
 func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (err error) {
-	httpRequest, err := NewRequest(codec.url.String(), request.ServiceMethod, args)
+	httpRequest, err := NewRequest(codec.url.String(), request.ServiceMethod, codec.httpHeaders, args)
 
 	if codec.cookies != nil {
 		for _, cookie := range codec.cookies.Cookies(codec.url) {
@@ -137,7 +140,8 @@ func (codec *clientCodec) Close() error {
 }
 
 // NewClient returns instance of rpc.Client object, that is used to send request to xmlrpc service.
-func NewClient(requrl string, transport http.RoundTripper) (*Client, error) {
+// httpHeaders and transport are optional.
+func NewClient(requrl string, httpHeaders map[string]string, transport http.RoundTripper) (*Client, error) {
 	if transport == nil {
 		transport = http.DefaultTransport
 	}
@@ -157,12 +161,13 @@ func NewClient(requrl string, transport http.RoundTripper) (*Client, error) {
 	}
 
 	codec := clientCodec{
-		url:        u,
-		httpClient: httpClient,
-		close:      make(chan uint64),
-		ready:      make(chan uint64),
-		responses:  make(map[uint64]*http.Response),
-		cookies:    jar,
+		url:         u,
+		httpClient:  httpClient,
+		close:       make(chan uint64),
+		ready:       make(chan uint64),
+		responses:   make(map[uint64]*http.Response),
+		cookies:     jar,
+		httpHeaders: httpHeaders,
 	}
 
 	return &Client{rpc.NewClientWithCodec(&codec)}, nil
