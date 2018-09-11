@@ -26,7 +26,7 @@ func NewRequest(url string, method string, httpHeaders map[string]string, args i
 	}
 
 	for k, v := range httpHeaders {
-		request.Header.Set(k, v)
+		request.Header[k] = []string{v}
 	}
 
 	request.Header.Set("Content-Type", "text/xml")
