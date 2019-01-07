@@ -17,6 +17,7 @@ var marshalTests = []struct {
 	{false, "<value><boolean>0</boolean></value>"},
 	{12.134, "<value><double>12.134</double></value>"},
 	{-12.134, "<value><double>-12.134</double></value>"},
+	{738777323.0, "<value><double>738777323</double></value>"},
 	{time.Unix(1386622812, 0).UTC(), "<value><dateTime.iso8601>20131209T21:00:12</dateTime.iso8601></value>"},
 	{[]interface{}{1, "one"}, "<value><array><data><value><int>1</int></value><value><string>one</string></value></data></array></value>"},
 	{&struct {
