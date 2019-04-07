@@ -51,7 +51,7 @@ func encodeValue(val reflect.Value) ([]byte, error) {
 		b = []byte(fmt.Sprintf("<i4>%s</i4>", strconv.FormatUint(val.Uint(), 10)))
 	case reflect.Float32, reflect.Float64:
 		b = []byte(fmt.Sprintf("<double>%s</double>",
-			strconv.FormatFloat(val.Float(), 'g', -1, val.Type().Bits())))
+			strconv.FormatFloat(val.Float(), 'f', -1, val.Type().Bits())))
 	case reflect.Bool:
 		if val.Bool() {
 			b = []byte("<boolean>1</boolean>")
