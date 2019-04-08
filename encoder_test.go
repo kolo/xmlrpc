@@ -41,6 +41,8 @@ var marshalTests = []struct {
 }
 
 func Test_marshal(t *testing.T) {
+	sortMapKeys = true
+
 	for _, tt := range marshalTests {
 		b, err := marshal(tt.value)
 		if err != nil {

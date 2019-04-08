@@ -110,6 +110,8 @@ func encodeStruct(val reflect.Value) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+var sortMapKeys bool
+
 func encodeMap(val reflect.Value) ([]byte, error) {
 	var t = val.Type()
 
@@ -122,7 +124,10 @@ func encodeMap(val reflect.Value) ([]byte, error) {
 	b.WriteString("<struct>")
 
 	keys := val.MapKeys()
-	sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
+
+	if sortMapKeys {
+		sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
+	}
 
 	for i := 0; i < val.Len(); i++ {
 		key := keys[i]
