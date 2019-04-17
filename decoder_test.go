@@ -62,6 +62,7 @@ var unmarshalTests = []struct {
 	// array
 	{[]int{1, 5, 7}, new(*[]int), "<value><array><data><value><int>1</int></value><value><int>5</int></value><value><int>7</int></value></data></array></value>"},
 	{[]interface{}{"A", "5"}, new(interface{}), "<value><array><data><value><string>A</string></value><value><string>5</string></value></data></array></value>"},
+	{[]interface{}{"A", int64(5)}, new(interface{}), "<value><array><data><value><string>A</string></value><value><int>5</int></value></data></array></value>"},
 
 	// struct
 	{book{"War and Piece", 20}, new(*book), "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
@@ -135,6 +136,51 @@ func Test_unmarshalEmptyValueTag(t *testing.T) {
 
 	if err := unmarshal([]byte("<value/>"), &v); err != nil {
 		t.Fatalf("unmarshal error: %v", err)
+	}
+}
+
+const arrayValueXML = `
+<value>
+  <array>
+    <data>
+      <value><int>234</int></value>
+      <value><boolean>1</boolean></value>
+      <value><string>Hello World</string></value>
+      <value><string>Extra Value</string></value>
+    </data>
+  </array>
+</value>
+`
+
+func Test_unmarshalExistingArray(t *testing.T) {
+
+	var (
+		v1 int
+		v2 bool
+		v3 string
+
+		v = []interface{}{&v1, &v2, &v3}
+	)
+	if err := unmarshal([]byte(arrayValueXML), &v); err != nil {
+		t.Fatal(err)
+	}
+
+	// check pre-existing values
+	if want := 234; v1 != want {
+		t.Fatalf("want %d, got %d", want, v1)
+	}
+	if want := true; v2 != want {
+		t.Fatalf("want %t, got %t", want, v2)
+	}
+	if want := "Hello World"; v3 != want {
+		t.Fatalf("want %s, got %s", want, v3)
+	}
+	// check the appended result
+	if n := len(v); n != 4 {
+		t.Fatalf("missing appended result")
+	}
+	if got, ok := v[3].(string); !ok || got != "Extra Value" {
+		t.Fatalf("got %s, want %s", got, "Extra Value")
 	}
 }
 
