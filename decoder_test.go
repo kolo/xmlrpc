@@ -214,3 +214,82 @@ func decode(charset string, input io.Reader) (io.Reader, error) {
 
 	return transform.NewReader(input, charmap.Windows1251.NewDecoder()), nil
 }
+
+func Test_decodeEmbeddedStruct(t *testing.T) {
+	type CityState struct {
+		City  string
+		State string
+	}
+	type CustomerDetails struct {
+		Name   string `xmlrpc:"CustomerName"`
+		Region CityState
+	}
+	type Customer struct {
+		ID int `xmlrpc:"CustomerId"`
+		CustomerDetails
+	}
+	type Status struct {
+		Code int    `xmlrpc:"Code"`
+		Msg  string `xmlrpc:"Msg"`
+		Customer
+	}
+	type Serial struct {
+		Serial int
+	}
+	type EmbeddedStatus struct {
+		Name string `xmlrpc:"Name"`
+		Status
+		S *Serial
+	}
+	type DuplicateEmbeddedFields struct {
+		City string
+		Name string `xmlrpc:"CustomerName"`
+		Status
+	}
+
+	data, err := ioutil.ReadFile("fixtures/embedded.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Ensure all values are properly unmarshaled into the embedded struct fields, no matter
+	// their depth.
+	es := EmbeddedStatus{}
+	if err := unmarshal(data, &es); err != nil {
+		t.Fatal(err)
+	}
+
+	if expected := "Acme"; es.Customer.CustomerDetails.Name != expected {
+		t.Errorf("expected Customer Name = %q; actual = %q", expected, es.Customer.CustomerDetails.Name)
+	}
+	if expected := "Somecity"; es.Customer.CustomerDetails.Region.City != expected {
+		t.Errorf("expected Customer City = %q; actual = %q", expected, es.Customer.CustomerDetails.Region.City)
+	}
+	if expected := "Somestate"; es.Customer.CustomerDetails.Region.State != expected {
+		t.Errorf("expected Customer State = %q; actual = %q", expected, es.Customer.CustomerDetails.Region.State)
+	}
+	if expected := 1234; es.ID != expected {
+		t.Errorf("expected ID = %d; actual = %d", expected, es.ID)
+	}
+	if expected := 1; es.Code != expected {
+		t.Errorf("expected Code = %d; actual = %d", expected, es.Code)
+	}
+	if expected := "Test"; es.Msg != expected {
+		t.Errorf("expected Msg = %q; actual = %q", expected, es.Msg)
+	}
+	if expected := "Blah"; es.Name != expected {
+		t.Errorf("expected Name = %q; actual = %q", expected, es.Name)
+	}
+	if expected := 5678; es.S.Serial != expected {
+		t.Errorf("expected Serial = %d; actual = %d", expected, es.S.Serial)
+	}
+
+	// Make sure we receive an error if we attempt to decode to a struct with
+	// conflicting tag/field names.
+	dupe := DuplicateEmbeddedFields{}
+	if err := unmarshal(data, &dupe); err == nil {
+		t.Error("expected an error with conflicting tag/field names")
+	} else {
+		t.Log(err)
+	}
+}

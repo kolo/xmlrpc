@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<methodResponse>
+    <params>
+        <value>
+            <struct>
+                <member>
+                    <name>Name</name>
+                    <value><string>Blah</string></value>
+                </member>
+                <member>
+                    <name>Code</name>
+                    <value><int>1</int></value>
+                </member>
+                <member>
+                    <name>Msg</name>
+                    <value><string>Test</string></value>
+                </member>
+                <member>
+                    <name>CustomerName</name>
+                    <value><string>Acme</string></value>
+                </member>
+                <member>
+                    <name>City</name>
+                    <value><string>Somecity</string></value>
+                </member>
+                <member>
+                    <name>State</name>
+                    <value><string>Somestate</string></value>
+                </member>
+                <member>
+                    <name>CustomerId</name>
+                    <value><int>1234</int></value>
+                </member>
+                <member>
+                    <name>Serial</name>
+                    <value><int>5678</int></value>
+                </member>
+            </struct>
+        </value>
+    </params>
+</methodResponse>
