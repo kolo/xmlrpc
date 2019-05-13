@@ -140,6 +140,23 @@ func Test_unmarshalEmptyValueTag(t *testing.T) {
 	}
 }
 
+const structEmptyXML = `
+<value>
+  <struct>
+  </struct>
+</value>
+`
+
+func Test_unmarshalEmptyStruct(t *testing.T) {
+	var v interface{}
+	if err := unmarshal([]byte(structEmptyXML), &v); err != nil {
+		t.Fatal(err)
+	}
+	if v == nil {
+		t.Fatalf("got nil map")
+	}
+}
+
 const arrayValueXML = `
 <value>
   <array>
