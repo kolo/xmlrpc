@@ -68,6 +68,7 @@ var unmarshalTests = []struct {
 	{book{"War and Piece", 20}, new(*book), "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
 	{bookUnexported{}, new(*bookUnexported), "<value><struct><member><name>title</name><value><string>War and Piece</string></value></member><member><name>amount</name><value><int>20</int></value></member></struct></value>"},
 	{map[string]interface{}{"Name": "John Smith"}, new(interface{}), "<value><struct><member><name>Name</name><value><string>John Smith</string></value></member></struct></value>"},
+	{map[string]interface{}{}, new(interface{}), "<value><struct></struct></value>"},
 }
 
 func _time(s string) time.Time {
@@ -136,6 +137,23 @@ func Test_unmarshalEmptyValueTag(t *testing.T) {
 
 	if err := unmarshal([]byte("<value/>"), &v); err != nil {
 		t.Fatalf("unmarshal error: %v", err)
+	}
+}
+
+const structEmptyXML = `
+<value>
+  <struct>
+  </struct>
+</value>
+`
+
+func Test_unmarshalEmptyStruct(t *testing.T) {
+	var v interface{}
+	if err := unmarshal([]byte(structEmptyXML), &v); err != nil {
+		t.Fatal(err)
+	}
+	if v == nil {
+		t.Fatalf("got nil map")
 	}
 }
 
