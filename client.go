@@ -106,9 +106,7 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 		return nil
 	}
 
-	codec.mutex.Lock()
 	codec.response = resp
-	codec.mutex.Unlock()
 
 	return nil
 }
