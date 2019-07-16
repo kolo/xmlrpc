@@ -31,7 +31,7 @@ type clientCodec struct {
 	responses map[uint64]*http.Response
 	mutex     sync.Mutex
 
-	response *Response
+	response Response
 
 	// ready presents channel, that is used to link request and it`s response.
 	ready chan uint64
@@ -75,7 +75,6 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 
 func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error) {
 	var seq uint64
-
 	select {
 	case seq = <-codec.ready:
 	case <-codec.close:
@@ -84,33 +83,29 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 
 	codec.mutex.Lock()
 	httpResponse := codec.responses[seq]
+	delete(codec.responses, seq)
 	codec.mutex.Unlock()
 
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
-		return fmt.Errorf("request error: bad status code - %d", httpResponse.StatusCode)
+		response.Error = fmt.Sprintf("request error: bad status code - %d", httpResponse.StatusCode)
 	}
 
-	respData, err := ioutil.ReadAll(httpResponse.Body)
-
+	defer httpResponse.Body.Close()
+	body, err := ioutil.ReadAll(httpResponse.Body)
 	if err != nil {
-		return err
+		response.Error = err.Error()
 	}
 
-	httpResponse.Body.Close()
-
-	resp := NewResponse(respData)
-
-	if resp.Failed() {
-		response.Error = fmt.Sprintf("%v", resp.Err())
+	resp := Response(body)
+	if err := resp.Err(); err != nil {
+		response.Error = err.Error()
 	}
-
-	codec.response = resp
-
-	response.Seq = seq
 
 	codec.mutex.Lock()
-	delete(codec.responses, seq)
+	codec.response = resp
 	codec.mutex.Unlock()
+
+	response.Seq = seq
 
 	return nil
 }
@@ -119,12 +114,7 @@ func (codec *clientCodec) ReadResponseBody(v interface{}) (err error) {
 	if v == nil {
 		return nil
 	}
-
-	if err = codec.response.Unmarshal(v); err != nil {
-		return err
-	}
-
-	return nil
+	return codec.response.Unmarshal(v)
 }
 
 func (codec *clientCodec) Close() error {
