@@ -80,36 +80,35 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	case <-codec.close:
 		return errors.New("codec is closed")
 	}
+	response.Seq = seq
 
 	codec.mutex.Lock()
 	httpResponse := codec.responses[seq]
 	delete(codec.responses, seq)
 	codec.mutex.Unlock()
 
+	defer httpResponse.Body.Close()
+
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
 		response.Error = fmt.Sprintf("request error: bad status code - %d", httpResponse.StatusCode)
+		return nil
 	}
 
 	body, err := ioutil.ReadAll(httpResponse.Body)
 	if err != nil {
-		if response.Error == "" {
-			response.Error = err.Error()
-		}
+		response.Error = err.Error()
+		return nil
 	}
-	httpResponse.Body.Close()
 
 	resp := Response(body)
 	if err := resp.Err(); err != nil {
-		if response.Error == "" {
-			response.Error = err.Error()
-		}
+		response.Error = err.Error()
+		return nil
 	}
 
 	codec.mutex.Lock()
 	codec.response = resp
 	codec.mutex.Unlock()
-
-	response.Seq = seq
 
 	return nil
 }
