@@ -90,15 +90,19 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 		response.Error = fmt.Sprintf("request error: bad status code - %d", httpResponse.StatusCode)
 	}
 
-	defer httpResponse.Body.Close()
 	body, err := ioutil.ReadAll(httpResponse.Body)
 	if err != nil {
-		response.Error = err.Error()
+		if response.Error == "" {
+			response.Error = err.Error()
+		}
 	}
+	httpResponse.Body.Close()
 
 	resp := Response(body)
 	if err := resp.Err(); err != nil {
-		response.Error = err.Error()
+		if response.Error == "" {
+			response.Error = err.Error()
+		}
 	}
 
 	codec.mutex.Lock()
