@@ -43,14 +43,14 @@ type clientCodec struct {
 func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (err error) {
 	httpRequest, err := NewRequest(codec.url.String(), request.ServiceMethod, args)
 
+	if err != nil {
+		return err
+	}
+
 	if codec.cookies != nil {
 		for _, cookie := range codec.cookies.Cookies(codec.url) {
 			httpRequest.AddCookie(cookie)
 		}
-	}
-
-	if err != nil {
-		return err
 	}
 
 	var httpResponse *http.Response
