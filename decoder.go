@@ -106,11 +106,16 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 		// Treat value data without type identifier as string
 		if t, ok := tok.(xml.CharData); ok {
 			if value := strings.TrimSpace(string(t)); value != "" {
-				if err = checkType(val, reflect.String); err != nil {
+				if checkType(val, reflect.Interface) == nil && val.IsNil() {
+					pstr := reflect.New(reflect.TypeOf(value)).Elem()
+					pstr.SetString(value)
+					val.Set(pstr)
+				} else if err = checkType(val, reflect.String); err != nil {
 					return err
+				} else {
+					val.SetString(value)
 				}
 
-				val.SetString(value)
 				return nil
 			}
 		}
