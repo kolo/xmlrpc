@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -90,21 +91,25 @@ func encodeStruct(val reflect.Value) ([]byte, error) {
 
 	t := val.Type()
 	for i := 0; i < t.NumField(); i++ {
-		b.WriteString("<member>")
 		f := t.Field(i)
 
 		name := f.Tag.Get("xmlrpc")
+		// if the tag has the omitempty property, skip it
+		if strings.HasSuffix(name, ",omitempty") {
+			continue
+		}
 		if name == "" {
 			name = f.Name
 		}
-		b.WriteString(fmt.Sprintf("<name>%s</name>", name))
 
 		p, err := encodeValue(val.FieldByName(f.Name))
 		if err != nil {
 			return nil, err
 		}
-		b.Write(p)
 
+		b.WriteString("<member>")
+		b.WriteString(fmt.Sprintf("<name>%s</name>", name))
+		b.Write(p)
 		b.WriteString("</member>")
 	}
 
