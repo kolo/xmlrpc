@@ -28,6 +28,7 @@ Second argument of NewClient function is an object that implements
 [http.RoundTripper](http://golang.org/pkg/net/http/#RoundTripper)
 interface, it can be used to get more control over connection options.
 By default it initialized by http.DefaultTransport object.
+These tags support the omitempty property.
 
 ### Arguments encoding
 
