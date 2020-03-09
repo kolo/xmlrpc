@@ -95,9 +95,10 @@ func encodeStruct(val reflect.Value) ([]byte, error) {
 
 		name := f.Tag.Get("xmlrpc")
 		// if the tag has the omitempty property, skip it
-		if strings.HasSuffix(name, ",omitempty") {
+		if strings.HasSuffix(name, ",omitempty") && val.FieldByName(f.Name).IsZero() {
 			continue
 		}
+		name = strings.TrimSuffix(name, ",omitempty")
 		if name == "" {
 			name = f.Name
 		}

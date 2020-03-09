@@ -44,8 +44,15 @@ var marshalTests = []struct {
 		Amount int
 		Author string `xmlrpc:"author,omitempty"`
 	}{
-		Title: "War and Piece", Amount: 20, Author: "bob",
+		Title: "War and Piece", Amount: 20,
 	}, "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member></struct></value>"},
+	{&struct {
+		Title  string
+		Amount int
+		Author string `xmlrpc:"author,omitempty"`
+	}{
+		Title: "War and Piece", Amount: 20, Author: "Leo Tolstoy",
+	}, "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member><member><name>author</name><value><string>Leo Tolstoy</string></value></member></struct></value>"},
 	{&struct {
 	}{}, "<value><struct></struct></value>"},
 }
