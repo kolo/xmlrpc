@@ -84,26 +84,27 @@ func encodeValue(val reflect.Value) ([]byte, error) {
 	return []byte(fmt.Sprintf("<value>%s</value>", string(b))), nil
 }
 
-func encodeStruct(val reflect.Value) ([]byte, error) {
+func encodeStruct(structVal reflect.Value) ([]byte, error) {
 	var b bytes.Buffer
 
 	b.WriteString("<struct>")
 
-	t := val.Type()
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
+	structType := structVal.Type()
+	for i := 0; i < structType.NumField(); i++ {
+		fieldVal := structVal.Field(i)
+		fieldType := structType.Field(i)
 
-		name := f.Tag.Get("xmlrpc")
+		name := fieldType.Tag.Get("xmlrpc")
 		// if the tag has the omitempty property, skip it
-		if strings.HasSuffix(name, ",omitempty") && val.FieldByName(f.Name).IsZero() {
+		if strings.HasSuffix(name, ",omitempty") && fieldVal.IsZero() {
 			continue
 		}
 		name = strings.TrimSuffix(name, ",omitempty")
 		if name == "" {
-			name = f.Name
+			name = fieldType.Name
 		}
 
-		p, err := encodeValue(val.FieldByName(f.Name))
+		p, err := encodeValue(fieldVal)
 		if err != nil {
 			return nil, err
 		}
