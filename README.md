@@ -28,7 +28,6 @@ Second argument of NewClient function is an object that implements
 [http.RoundTripper](http://golang.org/pkg/net/http/#RoundTripper)
 interface, it can be used to get more control over connection options.
 By default it initialized by http.DefaultTransport object.
-These tags support the omitempty property.
 
 ### Arguments encoding
 
@@ -45,11 +44,12 @@ Data types encoding rules:
 * xmlrpc.Base64 encoded to base64;
 * slice encoded to array;
 
-Structs decoded to struct by following rules:
+Structs encoded to struct by following rules:
 
 * all public field become struct members;
 * field name become member name;
 * if field has xmlrpc tag, its value become member name.
+* for fields tagged with `",omitempty"`, empty values are omitted;
 
 Server method can accept few arguments, to handle this case there is
 special approach to handle slice of empty interfaces (`[]interface{}`).
