@@ -41,24 +41,36 @@ func (r Response) Unmarshal(v interface{}) error {
 	return nil
 }
 
-type ResponseMulticall []byte
+type responseMulticall []byte
 
-func (r ResponseMulticall) Err() error {
+func (r responseMulticall) Err() error {
 	return Response(r).Err()
 }
 
-// Unmarshal decodes a multicall anwser
-// `v` must be a slice/array of pointers
-func (r ResponseMulticall) Unmarshal(v interface{}) error {
-	switch ki := reflect.TypeOf(v).Kind(); ki {
+// tmp storage for multicall responses
+type responsesError struct {
+	err   *MulticallFault
+	datas interface{} // slice/array of pointers
+}
+
+func (r responseMulticall) Unmarshal(v interface{}) error {
+	out, ok := v.(*responsesError)
+	if !ok {
+		return fmt.Errorf("wrong type for destination")
+	}
+
+	switch ki := reflect.TypeOf(out.datas).Kind(); ki {
 	case reflect.Array, reflect.Slice: // OK
 	default:
 		return fmt.Errorf("destination for multicall must be Array or Slice, got %s", ki)
 	}
-	outSlice := reflect.ValueOf(v)
+	outSlice := reflect.ValueOf(out.datas)
 
 	parts, err := splitMulticall(r)
-	if err != nil {
+	if multicallErr, ok := err.(MulticallFault); ok {
+		out.err = &multicallErr
+		return nil
+	} else if err != nil {
 		return err
 	}
 

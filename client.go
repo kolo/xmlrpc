@@ -19,14 +19,23 @@ type Client struct {
 
 // Multicall performs a multicall request.
 // `args` should be constructed with `NewMulticallArg`
-// and `outs` must be an array/slice of pointers.
+// and `outs` must be a slice of pointers.
 // If the response contains at least one fault,
-// the first is returned.
+// the first is returned as `MulticallFault`.
 func (c Client) Multicall(calls []MulticallArg, outs ...interface{}) error {
 	if len(calls) != len(outs) {
 		return errors.New("lengths of calls and responses are not matching")
 	}
-	return c.Call(multicallMethod, calls, outs)
+	tmp := responsesError{datas: outs}
+	if err := c.Call(multicallMethod, calls, &tmp); err != nil {
+		return err
+	}
+	if tmp.err != nil {
+		err := *tmp.err
+		err.methodName = calls[err.Index].MethodName
+		return err
+	}
+	return nil
 }
 
 // store the method name as well
@@ -126,7 +135,7 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	}
 
 	if method == multicallMethod {
-		codec.response = ResponseMulticall(body)
+		codec.response = responseMulticall(body)
 	} else {
 		codec.response = Response(body)
 	}

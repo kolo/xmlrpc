@@ -42,7 +42,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 	var d1, d2 data
 	out := []interface{}{&d1, &d2}
-	err = ResponseMulticall(b).Unmarshal(out)
+	err = responseMulticall(b).Unmarshal(&responsesError{datas: out})
 	if err != nil {
 		t.Error(err)
 	}
@@ -54,7 +54,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	outArray := [2]interface{}{&d1, &d2}
-	err = ResponseMulticall(b).Unmarshal(outArray)
+	err = responseMulticall(b).Unmarshal(&responsesError{datas: outArray})
 	if err != nil {
 		t.Error(err)
 	}
@@ -66,7 +66,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	var outWrong string
-	err = ResponseMulticall(b).Unmarshal(&outWrong)
+	err = responseMulticall(b).Unmarshal(&outWrong)
 	if err == nil {
 		t.Error("expected error")
 	}

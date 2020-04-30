@@ -53,14 +53,15 @@ func getFaultResponse(fault []member) FaultError {
 	return FaultError{Code: code, String: str}
 }
 
-// MulticallFault track the position of the fault.
+// MulticallFault tracks the position of the fault.
 type MulticallFault struct {
 	FaultError
-	Index int // 0 based
+	Index      int    // 0 based
+	methodName string // for better message
 }
 
 func (m MulticallFault) Error() string {
-	return fmt.Sprintf("fault for call %d : %s", m.Index, m.FaultError.Error())
+	return fmt.Sprintf("fault in call %d (%s) : %s", m.Index, m.methodName, m.FaultError.Error())
 }
 
 // returns xml encoded chunks, one for each multicall response
