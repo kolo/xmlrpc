@@ -18,10 +18,10 @@ type Client struct {
 }
 
 // Multicall performs a multicall request.
-// `args` should be constructed with `NewMulticallArg`
+// `calls` should be constructed with `NewMulticallArg`
 // and `outs` must be a slice of pointers.
 // If the response contains at least one fault,
-// the first is returned as `MulticallFault`.
+// the first is returned as a `MulticallFault` error.
 func (c Client) Multicall(calls []MulticallArg, outs ...interface{}) error {
 	if len(calls) != len(outs) {
 		return errors.New("lengths of calls and responses are not matching")
