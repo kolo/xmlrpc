@@ -43,7 +43,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 	var d1, d2 data
 	out := []interface{}{&d1, &d2}
-	err = Response(b).unmarshalMulticall(multicallOut{args: calls, datas: out})
+	err = Response(b).unmarshalMulticall(multicallOut{calls: calls, datas: out})
 	if err != nil {
 		t.Error(err)
 	}
@@ -55,7 +55,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	outArray := [2]interface{}{&d1, &d2}
-	err = Response(b).unmarshalMulticall(multicallOut{args: calls, datas: outArray})
+	err = Response(b).unmarshalMulticall(multicallOut{calls: calls, datas: outArray})
 	if err != nil {
 		t.Error(err)
 	}
@@ -67,7 +67,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	var outWrong string
-	err = Response(b).unmarshalMulticall(multicallOut{args: calls, datas: &outWrong})
+	err = Response(b).unmarshalMulticall(multicallOut{calls: calls, datas: &outWrong})
 	if err == nil {
 		t.Error("expected error")
 	}

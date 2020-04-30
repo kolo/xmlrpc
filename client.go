@@ -24,7 +24,7 @@ func (c Client) Multicall(calls []MulticallArg, outs ...interface{}) error {
 	if len(calls) != len(outs) {
 		return errors.New("lengths of calls and responses are not matching")
 	}
-	tmp := multicallOut{args: calls, datas: outs}
+	tmp := multicallOut{calls: calls, datas: outs}
 	return c.Call("system.multicall", calls, tmp)
 }
 

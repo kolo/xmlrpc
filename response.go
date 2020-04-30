@@ -35,7 +35,7 @@ func (r Response) Err() error {
 
 // tmp storage for multicall responses
 type multicallOut struct {
-	args  []MulticallArg // for error messages
+	calls []MulticallArg // for error messages
 	datas interface{}    // slice/array of pointers
 }
 

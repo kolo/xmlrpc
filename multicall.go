@@ -75,7 +75,7 @@ func (r Response) unmarshalMulticall(out multicallOut) error {
 
 	parts, err := splitMulticall(r)
 	if multicallErr, ok := err.(MulticallFault); ok {
-		multicallErr.methodName = out.args[multicallErr.Index].MethodName
+		multicallErr.methodName = out.calls[multicallErr.Index].MethodName
 		return multicallErr
 	} else if err != nil {
 		return err
