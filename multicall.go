@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"reflect"
 	"strconv"
 )
 
@@ -62,6 +63,38 @@ type MulticallFault struct {
 
 func (m MulticallFault) Error() string {
 	return fmt.Sprintf("fault in call %d (%s) : %s", m.Index, m.methodName, m.FaultError.Error())
+}
+
+func (r Response) unmarshalMulticall(out multicallOut) error {
+	switch ki := reflect.TypeOf(out.datas).Kind(); ki {
+	case reflect.Array, reflect.Slice: // OK
+	default:
+		return fmt.Errorf("destination for multicall must be Array or Slice, got %s", ki)
+	}
+	outSlice := reflect.ValueOf(out.datas)
+
+	parts, err := splitMulticall(r)
+	if multicallErr, ok := err.(MulticallFault); ok {
+		multicallErr.methodName = out.args[multicallErr.Index].MethodName
+		return multicallErr
+	} else if err != nil {
+		return err
+	}
+
+	if outSlice.Len() != len(parts) {
+		return fmt.Errorf("invalid number of return destinations : response needs %d, got %d", len(parts), outSlice.Len())
+	}
+	for i, xmlReturn := range parts {
+		// pointer to one call's destination
+		elem := outSlice.Index(i).Interface()
+
+		// unmarshal expect a wrapping <value> tag
+		xmlReturn = append(append([]byte("<value>"), xmlReturn...), "</value>"...)
+		if err := unmarshal(xmlReturn, elem); err != nil {
+			return fmt.Errorf("unmarshall number %d failed : %s", i, err.Error())
+		}
+	}
+	return nil
 }
 
 // returns xml encoded chunks, one for each multicall response

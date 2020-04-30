@@ -11,8 +11,6 @@ import (
 	"sync"
 )
 
-const multicallMethod = "system.multicall"
-
 type Client struct {
 	*rpc.Client
 }
@@ -26,23 +24,8 @@ func (c Client) Multicall(calls []MulticallArg, outs ...interface{}) error {
 	if len(calls) != len(outs) {
 		return errors.New("lengths of calls and responses are not matching")
 	}
-	tmp := responsesError{datas: outs}
-	if err := c.Call(multicallMethod, calls, &tmp); err != nil {
-		return err
-	}
-	if tmp.err != nil {
-		err := *tmp.err
-		err.methodName = calls[err.Index].MethodName
-		return err
-	}
-	return nil
-}
-
-// store the method name as well
-// used to special-case multicall
-type responseMethod struct {
-	response *http.Response
-	method   string
+	tmp := multicallOut{args: calls, datas: outs}
+	return c.Call("system.multicall", calls, tmp)
 }
 
 // clientCodec is rpc.ClientCodec interface implementation.
@@ -58,13 +41,10 @@ type clientCodec struct {
 
 	// responses presents map of active requests. It is required to return request id, that
 	// rpc.Client can mark them as done.
-	responses map[uint64]responseMethod
+	responses map[uint64]*http.Response
 	mutex     sync.Mutex
 
-	response interface {
-		Err() error
-		Unmarshal(v interface{}) error
-	}
+	response Response
 
 	// ready presents channel, that is used to link request and it`s response.
 	ready chan uint64
@@ -98,7 +78,7 @@ func (codec *clientCodec) WriteRequest(request *rpc.Request, args interface{}) (
 	}
 
 	codec.mutex.Lock()
-	codec.responses[request.Seq] = responseMethod{response: httpResponse, method: request.ServiceMethod}
+	codec.responses[request.Seq] = httpResponse
 	codec.mutex.Unlock()
 
 	codec.ready <- request.Seq
@@ -116,8 +96,7 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 	response.Seq = seq
 
 	codec.mutex.Lock()
-	resp := codec.responses[seq]
-	httpResponse, method := resp.response, resp.method
+	httpResponse := codec.responses[seq]
 	delete(codec.responses, seq)
 	codec.mutex.Unlock()
 
@@ -134,16 +113,13 @@ func (codec *clientCodec) ReadResponseHeader(response *rpc.Response) (err error)
 		return nil
 	}
 
-	if method == multicallMethod {
-		codec.response = responseMulticall(body)
-	} else {
-		codec.response = Response(body)
-	}
-
-	if err := codec.response.Err(); err != nil {
+	resp := Response(body)
+	if err := resp.Err(); err != nil {
 		response.Error = err.Error()
 		return nil
 	}
+
+	codec.response = resp
 
 	return nil
 }
@@ -190,7 +166,7 @@ func NewClient(requrl string, transport http.RoundTripper) (*Client, error) {
 		httpClient: httpClient,
 		close:      make(chan uint64),
 		ready:      make(chan uint64),
-		responses:  make(map[uint64]responseMethod),
+		responses:  make(map[uint64]*http.Response),
 		cookies:    jar,
 	}
 

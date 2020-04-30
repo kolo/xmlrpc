@@ -37,12 +37,13 @@ func TestUnmarshal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	calls := make([]MulticallArg, 2)
 	type data struct {
 		NbFiles int `xmlrpc:"nbfiles"`
 	}
 	var d1, d2 data
 	out := []interface{}{&d1, &d2}
-	err = responseMulticall(b).Unmarshal(&responsesError{datas: out})
+	err = Response(b).unmarshalMulticall(multicallOut{args: calls, datas: out})
 	if err != nil {
 		t.Error(err)
 	}
@@ -54,7 +55,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	outArray := [2]interface{}{&d1, &d2}
-	err = responseMulticall(b).Unmarshal(&responsesError{datas: outArray})
+	err = Response(b).unmarshalMulticall(multicallOut{args: calls, datas: outArray})
 	if err != nil {
 		t.Error(err)
 	}
@@ -66,7 +67,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	var outWrong string
-	err = responseMulticall(b).Unmarshal(&outWrong)
+	err = Response(b).unmarshalMulticall(multicallOut{args: calls, datas: &outWrong})
 	if err == nil {
 		t.Error("expected error")
 	}
