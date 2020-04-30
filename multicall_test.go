@@ -6,7 +6,7 @@ import (
 )
 
 func Test_splitMulticall(t *testing.T) {
-	b, err := ioutil.ReadFile("fixtures/test_error.xml")
+	b, err := ioutil.ReadFile("fixtures/multicall_error.xml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -19,7 +19,7 @@ func Test_splitMulticall(t *testing.T) {
 		t.Errorf("wrong position for fault %d", mf.Index)
 	}
 
-	b, err = ioutil.ReadFile("fixtures/test_ok.xml")
+	b, err = ioutil.ReadFile("fixtures/multicall_ok.xml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func Test_splitMulticall(t *testing.T) {
 }
 
 func TestUnmarshal(t *testing.T) {
-	b, err := ioutil.ReadFile("fixtures/test_ok.xml")
+	b, err := ioutil.ReadFile("fixtures/multicall_ok.xml")
 	if err != nil {
 		t.Fatal(err)
 	}
