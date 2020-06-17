@@ -61,7 +61,7 @@ func Test_marshal(t *testing.T) {
 	sortMapKeys = true
 
 	for _, tt := range marshalTests {
-		b, err := marshal(tt.value)
+		b, err := Marshal(tt.value)
 		if err != nil {
 			t.Fatalf("unexpected marshal error: %v", err)
 		}

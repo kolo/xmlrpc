@@ -16,7 +16,7 @@ type Base64 string
 
 type encodeFunc func(reflect.Value) ([]byte, error)
 
-func marshal(v interface{}) ([]byte, error) {
+func Marshal(v interface{}) ([]byte, error) {
 	if v == nil {
 		return []byte{}, nil
 	}

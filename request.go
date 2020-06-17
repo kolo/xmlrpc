@@ -40,7 +40,7 @@ func EncodeMethodCall(method string, args ...interface{}) ([]byte, error) {
 		b.WriteString("<params>")
 
 		for _, arg := range args {
-			p, err := marshal(arg)
+			p, err := Marshal(arg)
 			if err != nil {
 				return nil, err
 			}
