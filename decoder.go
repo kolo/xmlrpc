@@ -32,12 +32,12 @@ type TypeMismatchError string
 
 func (e TypeMismatchError) Error() string { return string(e) }
 
-type decoder struct {
+type Decoder struct {
 	*xml.Decoder
 }
 
 func unmarshal(data []byte, v interface{}) (err error) {
-	dec := &decoder{xml.NewDecoder(bytes.NewBuffer(data))}
+	dec := &Decoder{xml.NewDecoder(bytes.NewBuffer(data))}
 
 	if CharsetReader != nil {
 		dec.CharsetReader = CharsetReader
@@ -55,7 +55,7 @@ func unmarshal(data []byte, v interface{}) (err error) {
 				if val.Kind() != reflect.Ptr {
 					return errors.New("non-pointer value passed to unmarshal")
 				}
-				if err = dec.decodeValue(val.Elem()); err != nil {
+				if err = dec.DecodeValue(val.Elem()); err != nil {
 					return err
 				}
 
@@ -73,7 +73,7 @@ func unmarshal(data []byte, v interface{}) (err error) {
 	return nil
 }
 
-func (dec *decoder) decodeValue(val reflect.Value) error {
+func (dec *Decoder) DecodeValue(val reflect.Value) error {
 	var tok xml.Token
 	var err error
 
@@ -196,7 +196,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 							return err
 						}
 						if t, ok := tok.(xml.StartElement); ok && t.Name.Local == "value" {
-							if err = dec.decodeValue(fv); err != nil {
+							if err = dec.DecodeValue(fv); err != nil {
 								return err
 							}
 
@@ -263,12 +263,12 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 							if v.Kind() != reflect.Ptr {
 								return errors.New("error: cannot write to non-pointer array element")
 							}
-							if err = dec.decodeValue(v); err != nil {
+							if err = dec.DecodeValue(v); err != nil {
 								return err
 							}
 						} else {
 							v := reflect.New(slice.Type().Elem())
-							if err = dec.decodeValue(v); err != nil {
+							if err = dec.DecodeValue(v); err != nil {
 								return err
 							}
 							slice = reflect.Append(slice, v.Elem())
@@ -407,7 +407,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 	return nil
 }
 
-func (dec *decoder) readTag() (string, []byte, error) {
+func (dec *Decoder) readTag() (string, []byte, error) {
 	var tok xml.Token
 	var err error
 
@@ -431,7 +431,7 @@ func (dec *decoder) readTag() (string, []byte, error) {
 	return name, value, dec.Skip()
 }
 
-func (dec *decoder) readCharData() ([]byte, error) {
+func (dec *Decoder) readCharData() ([]byte, error) {
 	var tok xml.Token
 	var err error
 
