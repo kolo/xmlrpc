@@ -1,5 +1,11 @@
 [![GoDoc](https://godoc.org/github.com/kolo/xmlrpc?status.svg)](https://godoc.org/github.com/kolo/xmlrpc)
 
+# kolo/xmlrpc with with 'decoder' and 'marshal' made public
+
+This is a fork of [kolo/xmlrpc](https://github.com/kolo/xmlrpc) with the purpose of making 'decoder' and 'marshall' methods public.
+
+Long term plan is to move to another library such as [alexejk/go-xmlrpc](https://github.com/alexejk/go-xmlrpc)
+
 ## Overview
 
 xmlrpc is an implementation of client side part of XMLRPC protocol in Go language.
