@@ -1,4 +1,4 @@
-module github.com/Prnyself/xmlrpc
+module github.com/kolo/xmlrpc
 
 go 1.14
 
