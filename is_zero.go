@@ -39,6 +39,6 @@ func isZero(v Value) bool {
 	default:
 		// This should never happens, but will act as a safeguard for
 		// later, as a default value doesn't makes sense here.
-		panic(&ValueError{"reflect.Value.IsZero", v.Kind()})
+		panic(&ValueError{Method: "reflect.Value.IsZero", Kind: v.Kind()})
 	}
 }

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<methodResponse>
+    <params>
+        <param>
+            <value>
+                <array>
+                    <data>
+                        <value>
+                            <array>
+                                <data>
+                                    <value>
+                                        <struct>
+                                            <member>
+                                                <name>nbfiles</name>
+                                                <value>
+                                                    <int>4</int>
+                                                </value>
+                                            </member>
+                                        </struct>
+                                    </value>
+                                </data>
+                            </array>
+                        </value>
+                        <value>
+                            <array>
+                                <data>
+                                    <value>
+                                        <struct>
+                                            <member>
+                                                <name>nbfiles</name>
+                                                <value>
+                                                    <int>1</int>
+                                                </value>
+                                            </member>
+                                        </struct>
+                                    </value>
+                                </data>
+                            </array>
+                        </value>
+                    </data>
+                </array>
+            </value>
+        </param>
+    </params>
+</methodResponse>

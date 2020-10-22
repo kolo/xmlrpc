@@ -15,6 +15,19 @@ type Client struct {
 	*rpc.Client
 }
 
+// Multicall performs a multicall request.
+// `calls` should be constructed with `NewMulticallArg`
+// and `outs` must be a slice of pointers.
+// If the response contains at least one fault,
+// the first is returned as a `MulticallFault` error.
+func (c Client) Multicall(calls []MulticallArg, outs ...interface{}) error {
+	if len(calls) != len(outs) {
+		return errors.New("lengths of calls and responses are not matching")
+	}
+	tmp := multicallOut{calls: calls, datas: outs}
+	return c.Call("system.multicall", calls, tmp)
+}
+
 // clientCodec is rpc.ClientCodec interface implementation.
 type clientCodec struct {
 	// url presents url of xmlrpc service

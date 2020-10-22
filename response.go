@@ -33,10 +33,19 @@ func (r Response) Err() error {
 	return fault
 }
 
+// tmp storage for multicall responses
+type multicallOut struct {
+	calls []MulticallArg // for error messages
+	datas interface{}    // slice/array of pointers
+}
+
 func (r Response) Unmarshal(v interface{}) error {
+	if mc, isMulticall := v.(multicallOut); isMulticall {
+		return r.unmarshalMulticall(mc)
+	}
+
 	if err := unmarshal(r, v); err != nil {
 		return err
 	}
-
 	return nil
 }

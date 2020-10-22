@@ -14,8 +14,6 @@ import (
 // Base64 represents value in base64 encoding
 type Base64 string
 
-type encodeFunc func(reflect.Value) ([]byte, error)
-
 func marshal(v interface{}) ([]byte, error) {
 	if v == nil {
 		return []byte{}, nil
