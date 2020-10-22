@@ -26,6 +26,7 @@ var (
 
 	timeLayouts     = []string{iso8601, iso8601Z, iso8601Hyphen, iso8601HyphenZ}
 	invalidXmlError = errors.New("invalid xml")
+	endValueError   = errors.New("end element is </value>")
 )
 
 type TypeMismatchError string
@@ -55,7 +56,7 @@ func unmarshal(data []byte, v interface{}) (err error) {
 				if val.Kind() != reflect.Ptr {
 					return errors.New("non-pointer value passed to unmarshal")
 				}
-				if err = dec.decodeValue(val.Elem()); err != nil {
+				if err = dec.decodeValue(val.Elem()); err != nil && err != endValueError {
 					return err
 				}
 
@@ -92,7 +93,7 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 
 		if t, ok := tok.(xml.EndElement); ok {
 			if t.Name.Local == "value" {
-				return nil
+				return endValueError
 			} else {
 				return invalidXmlError
 			}
@@ -197,6 +198,10 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 						}
 						if t, ok := tok.(xml.StartElement); ok && t.Name.Local == "value" {
 							if err = dec.decodeValue(fv); err != nil {
+								// </value> has already been processed, skip dec.Skip()
+								if err == endValueError {
+									break
+								}
 								return err
 							}
 
@@ -264,11 +269,22 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 								return errors.New("error: cannot write to non-pointer array element")
 							}
 							if err = dec.decodeValue(v); err != nil {
+								// </value> has already been processed, skip dec.Skip()
+								if err == endValueError {
+									index++
+									continue
+								}
 								return err
 							}
 						} else {
 							v := reflect.New(slice.Type().Elem())
 							if err = dec.decodeValue(v); err != nil {
+								// </value> has already been processed, skip dec.Skip()
+								if err == endValueError {
+									slice = reflect.Append(slice, v.Elem())
+									index++
+									continue
+								}
 								return err
 							}
 							slice = reflect.Append(slice, v.Elem())
