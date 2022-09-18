@@ -60,7 +60,7 @@ var marshalTests = []struct {
 		Name string `xmlrpc:"-"`
 	}{
 		ID: 123, Name: "kolo",
-	}, "<value><struct><member><name>id</name><value><int>1</int></value></member></struct></value>"},
+	}, "<value><struct><member><name>id</name><value><int>123</int></value></member></struct></value>"},
 }
 
 func Test_marshal(t *testing.T) {
