@@ -55,6 +55,12 @@ var marshalTests = []struct {
 	}, "<value><struct><member><name>Title</name><value><string>War and Piece</string></value></member><member><name>Amount</name><value><int>20</int></value></member><member><name>author</name><value><string>Leo Tolstoy</string></value></member></struct></value>"},
 	{&struct {
 	}{}, "<value><struct></struct></value>"},
+	{&struct {
+		ID   int    `xmlrpc:"id"`
+		Name string `xmlrpc:"-"`
+	}{
+		ID: 123, Name: "kolo",
+	}, "<value><struct><member><name>id</name><value><int>1</int></value></member></struct></value>"},
 }
 
 func Test_marshal(t *testing.T) {
