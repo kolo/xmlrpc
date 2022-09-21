@@ -108,9 +108,21 @@ func encodeStruct(structVal reflect.Value) ([]byte, error) {
 			name = fieldType.Name
 		}
 
-		p, err := encodeValue(fieldVal)
-		if err != nil {
-			return nil, err
+		var p []byte
+		var err error
+		// if the tag has the nilTag property, write it as '<nil/>'
+		if strings.HasSuffix(name, ",nilTag") && fieldVal.IsNil() {
+			p, err = []byte("<value><nil/></value>"), nil
+
+			name = strings.TrimSuffix(name, ",nilTag")
+			if name == "" {
+				name = fieldType.Name
+			}
+		} else {
+			p, err = encodeValue(fieldVal)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		b.WriteString("<member>")
