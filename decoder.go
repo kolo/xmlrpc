@@ -293,19 +293,12 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 			}
 		}
 	default:
-		if tok, err = dec.Token(); err != nil {
+		data, err := dec.readCharData()
+		if err != nil {
 			return err
 		}
-
-		var data []byte
-
-		switch t := tok.(type) {
-		case xml.EndElement:
+		if data == nil {
 			return nil
-		case xml.CharData:
-			data = []byte(t.Copy())
-		default:
-			return invalidXmlError
 		}
 
 		switch typeName {
@@ -401,11 +394,6 @@ func (dec *decoder) decodeValue(val reflect.Value) error {
 		default:
 			return errors.New("unsupported type")
 		}
-
-		// </type>
-		if err = dec.Skip(); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -432,21 +420,34 @@ func (dec *decoder) readTag() (string, []byte, error) {
 		return "", nil, err
 	}
 
-	return name, value, dec.Skip()
+	if value == nil {
+		return "", nil, invalidXmlError
+	}
+	return name, value, nil
 }
 
+// readCharData reads through the closing element. XML character data may be
+// split across several tokens, for example at CDATA sections or comments.
 func (dec *decoder) readCharData() ([]byte, error) {
-	var tok xml.Token
-	var err error
-
-	if tok, err = dec.Token(); err != nil {
-		return nil, err
-	}
-
-	if t, ok := tok.(xml.CharData); ok {
-		return []byte(t.Copy()), nil
-	} else {
-		return nil, invalidXmlError
+	var data []byte
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			return nil, err
+		}
+		switch t := tok.(type) {
+		case xml.CharData:
+			if data == nil {
+				data = []byte{}
+			}
+			data = append(data, t...)
+		case xml.EndElement:
+			return data, nil
+		case xml.Comment, xml.ProcInst:
+			// These do not contribute to the element's text content.
+		default:
+			return nil, invalidXmlError
+		}
 	}
 }
 
